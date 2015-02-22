@@ -1,0 +1,45 @@
+{
+  "name": "event-target-shim",
+  "version": "0.0.1",
+  "description": "A polyfill for W3C EventTarget Constructor.",
+  "main": "lib/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build": "babel src --out-dir lib --source-maps-inline",
+    "test": "karma start karma.conf.js --single-run",
+    "testing": "karma start karma.conf.js --auto-watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mysticatea/event-target-shim.git"
+  },
+  "keywords": [
+    "w3c",
+    "eventtarget",
+    "event",
+    "events",
+    "shim",
+    "polyfill"
+  ],
+  "author": "Toru Nagashima",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mysticatea/event-target-shim/issues"
+  },
+  "homepage": "https://github.com/mysticatea/event-target-shim",
+  "devDependencies": {
+    "babel": "^4.4.3",
+    "babelify": "^5.0.3",
+    "chai": "^2.0.0",
+    "chai-spies": "^0.5.1",
+    "karma": "^0.12.31",
+    "karma-browserify": "^3.0.2",
+    "karma-chrome-launcher": "^0.1.7",
+    "karma-firefox-launcher": "^0.1.4",
+    "karma-ie-launcher": "^0.1.5",
+    "karma-mocha": "^0.1.10",
+    "mocha": "^2.1.0"
+  }
+}
