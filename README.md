@@ -35,7 +35,7 @@ npm install event-target-shim --save
 
 ## Usage
 
-This module has been desined that uses together [Browserify](http://browserify.org/).
+This module has been designed that uses together [Browserify](http://browserify.org/).
 
 ```js
 import EventTarget from "event-target-shim";
