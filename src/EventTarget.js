@@ -1,153 +1,236 @@
 "use strict";
+import {createEventWrapper, STOP_IMMEDIATE_PROPAGATION_FLAG, DISPATCH_FLAG,
+        CANCELED_FLAG} from "./EventWrapper";
 
-let EventTarget;
-if (false/*typeof window !== "undefined" && typeof window.EventTarget !== "undefined"*/) {
-  // Occored `Illegal constructor` exception when called.
-  EventTarget = window.EventTarget;
+const LISTENERS = Symbol("listeners");
+const SET_ATTRIBUTE_LISTENER = Symbol("setAttributeListener");
+const GET_ATTRIBUTE_LISTENER = Symbol("getAttributeListener");
+const CAPTURE = 1;
+const BUBBLE = 2;
+const ATTRIBUTE = 3;
+
+// Return definition of an attribute listener.
+function defineAttributeListener(type) {
+  type = type.replace(/"/g, "\\\"");
+  return `
+    "on${type}": {
+      get: function() { return this[GET_ATTRIBUTE_LISTENER]("${type}"); },
+      set: function(value) { this[SET_ATTRIBUTE_LISTENER]("${type}", value); },
+      configurable: true
+    },
+  `;
 }
-else {
-  // Event's private members.
-  const STOP_IMMEDIATE_PROPAGATION_FLAG = Symbol("stop immediate propagation flag");
-  const CANCELED_FLAG = Symbol("canceled flag");
-  const DISPATCH_FLAG = Symbol("dispatch flag");
-  // EventTarget's private members.
-  const LISTENERS = Symbol("listeners");
 
-  // Create a LinkedList structure for EventListener.
-  function newNode(listener, capture) {
-    return {listener, capture, next: null};
+// Create a LinkedList structure for EventListener.
+function newNode(listener, kind) {
+  return {listener, kind, next: null};
+}
+
+//
+// Class Definition.
+//
+let ET = function EventTarget(...types) {
+  if (this instanceof EventTarget) {
+    // this[LISTENERS] is a Map.
+    // Its key is event type.
+    // Its value is ListenerNode object or null.
+    //
+    // interface ListenerNode {
+    //   let listener: Function
+    //   let kind: CAPTURE|BUBBLE|ATTRIBUTE
+    //   let next: ListenerNode|null
+    // }
+    this[LISTENERS] = Object.create(null);
   }
-
-  // Create a Event wrapper to rewrite readonly properties.
-  function newEventWrapper(event, eventTarget) {
-    let timeStamp = (typeof event.timeStamp === "number"
-      ? event.timeStamp
-      : Date.now());
-
-    return Object.create(event, {
-      type: {value: event.type, enumerable: true},
-      target: {value: eventTarget, enumerable: true},
-      currentTarget: {value: eventTarget, enumerable: true},
-      eventPhase: {value: 2, enumerable: true},
-      stopPropagation: {value: function stopPropagation() {}},
-      stopImmediatePropagation: {value: function stopImmediatePropagation() {
-        this[STOP_IMMEDIATE_PROPAGATION_FLAG] = true;
-      }},
-      bubbles: {value: Boolean(event.bubbles), enumerable: true},
-      cancelable: {value: Boolean(event.cancelable), enumerable: true},
-      preventDefault: {value: function preventDefault() {
-        if (this.cancelable === true) {
-          this[CANCELED_FLAG] = true;
+  else if (types.length > 0) {
+    // To use to extend with attribute listener properties.
+    // e.g.
+    //     class MyCustomObject extends EventTarget("message", "error") {
+    //       //...
+    //     }
+    return Function(
+      "EventTargetBase",
+      "GET_ATTRIBUTE_LISTENER",
+      "SET_ATTRIBUTE_LISTENER",
+      `
+        function EventTarget() {
+          EventTargetBase.call(this);
         }
-      }},
-      defaultPrevented: {
-        get: function() { return this[CANCELED_FLAG]; },
-        enumerable: true
-      },
-      isTrusted: {value: false, enumerable: true},
-      timeStamp: {value: timeStamp, enumerable: true},
-      [STOP_IMMEDIATE_PROPAGATION_FLAG]: {value: false, writable: true},
-      [CANCELED_FLAG]: {value: false, writable: true},
-      [DISPATCH_FLAG]: {value: true}
-    });
+        EventTarget.prototype = Object.create(EventTargetBase.prototype, {
+          ${types.map(defineAttributeListener).join()}
+          constructor: {
+            value: EventTarget,
+            writable: true,
+            configurable: true
+          }
+        });
+        return EventTarget;
+      `
+    )(EventTarget, GET_ATTRIBUTE_LISTENER, SET_ATTRIBUTE_LISTENER);
   }
+  else {
+    throw new TypeError("Cannot call a class as a function");
+  }
+};
 
-  // Define EventTarget.
-  // See Also: https://dom.spec.whatwg.org/#interface-eventtarget
-  EventTarget = class EventTarget {
-    constructor() {
-      // This object is a Map.
-      // Its key is event type.
-      // Its value is ListenerNode object or null.
-      //
-      // interface ListenerNode {
-      //   let listener: Function
-      //   let capture: boolean
-      //   let next: ListenerNode|null
-      // }
-      this[LISTENERS] = Object.create(null);
-    }
+ET.prototype = Object.create(
+  (typeof EventTarget === "function" ? EventTarget : Object).prototype,
+  {
+    constructor: {
+      value: ET,
+      writable: true,
+      configurable: true
+    },
 
-    addEventListener(type, listener, capture = false) {
-      if (listener == null) {
-        return false;
-      }
-      capture = Boolean(capture);
-
-      let node = this[LISTENERS][type];
-      if (node == null) {
-        this[LISTENERS][type] = newNode(listener, capture);
-        return true;
-      }
-
-      let prev = null;
-      while (node != null) {
-        if (node.listener === listener && node.capture === capture) {
-          // Should ignore a duplicated listener.
+    addEventListener: {
+      value: function addEventListener(type, listener, capture = false) {
+        if (listener == null) {
           return false;
         }
-        prev = node;
-        node = node.next;
-      }
+        if (typeof listener !== "function") {
+          throw TypeError("listener should be a function.");
+        }
 
-      prev.next = newNode(listener, capture);
-      return true;
-    }
-
-    removeEventListener(type, listener, capture = false) {
-      if (listener == null) {
-        return false;
-      }
-      capture = Boolean(capture);
-
-      let prev = null;
-      let node = this[LISTENERS][type];
-      while (node != null) {
-        if (node.listener === listener && node.capture === capture) {
-          if (prev == null) {
-            this[LISTENERS][type] = node.next;
-          }
-          else {
-            prev.next = node.next;
-          }
+        let kind = (capture ? CAPTURE : BUBBLE);
+        let node = this[LISTENERS][type];
+        if (node == null) {
+          this[LISTENERS][type] = newNode(listener, kind);
           return true;
         }
 
-        prev = node;
-        node = node.next;
-      }
-
-      return false;
-    }
-
-    dispatchEvent(event) {
-      // Should check initialized flag, but impossible.
-      if (event[DISPATCH_FLAG]) {
-        throw Error("InvalidStateError");
-      }
-
-      // If listeners aren't registered, terminate.
-      let node = this[LISTENERS][event.type];
-      if (node == null) {
-        return true;
-      }
-
-      // Since we cannot rewrite several properties, so wrap object.
-      event = newEventWrapper(event, this);
-
-      // This doesn't process capturing phase and bubbling phase.
-      // This isn't participating in a tree.
-      while (node != null) {
-        node.listener.call(this, event);
-        if (event[STOP_IMMEDIATE_PROPAGATION_FLAG]) {
-          break;
+        let prev = null;
+        while (node != null) {
+          if (node.listener === listener && node.kind === kind) {
+            // Should ignore a duplicated listener.
+            return false;
+          }
+          prev = node;
+          node = node.next;
         }
-        node = node.next;
-      }
 
-      return !event[CANCELED_FLAG];
+        prev.next = newNode(listener, kind);
+        return true;
+      },
+      writable: true,
+      configurable: true
+    },
+
+    removeEventListener: {
+      value: function removeEventListener(type, listener, capture = false) {
+        if (listener == null) {
+          return false;
+        }
+
+        let kind = (capture ? CAPTURE : BUBBLE);
+        let prev = null;
+        let node = this[LISTENERS][type];
+        while (node != null) {
+          if (node.listener === listener && node.kind === kind) {
+            if (prev == null) {
+              this[LISTENERS][type] = node.next;
+            }
+            else {
+              prev.next = node.next;
+            }
+            return true;
+          }
+
+          prev = node;
+          node = node.next;
+        }
+
+        return false;
+      },
+      writable: true,
+      configurable: true
+    },
+
+    dispatchEvent: {
+      value: function dispatchEvent(event) {
+        // Should check initialized flag, but impossible.
+        if (event[DISPATCH_FLAG]) {
+          throw Error("InvalidStateError");
+        }
+
+        // If listeners aren't registered, terminate.
+        let node = this[LISTENERS][event.type];
+        if (node == null) {
+          return true;
+        }
+
+        // Since we cannot rewrite several properties, so wrap object.
+        event = createEventWrapper(event, this);
+
+        // This doesn't process capturing phase and bubbling phase.
+        // This isn't participating in a tree.
+        while (node != null) {
+          node.listener.call(this, event);
+          if (event[STOP_IMMEDIATE_PROPAGATION_FLAG]) {
+            break;
+          }
+          node = node.next;
+        }
+
+        return !event[CANCELED_FLAG];
+      },
+      writable: true,
+      configurable: true
+    },
+
+    [GET_ATTRIBUTE_LISTENER]: {
+      value: function getAttributeListener(type) {
+        let node = this[LISTENERS][type];
+        while (node != null) {
+          if (node.kind === ATTRIBUTE) {
+            return node.listener;
+          }
+          node = node.next;
+        }
+        return null;
+      },
+      writable: true,
+      configurable: true
+    },
+
+    [SET_ATTRIBUTE_LISTENER]: {
+      value: function setAttributeListener(type, listener) {
+        if (listener != null && typeof listener !== "function") {
+          throw TypeError("listener should be a function.");
+        }
+
+        let prev = null;
+        let node = this[LISTENERS][type];
+        while (node != null) {
+          if (node.kind === ATTRIBUTE) {
+            // Remove old value.
+            if (prev == null) {
+              this[LISTENERS][type] = node.next;
+            }
+            else {
+              prev.next = node.next;
+            }
+          }
+          else {
+            prev = node;
+          }
+
+          node = node.next;
+        }
+
+        // Add new value.
+        if (listener != null) {
+          if (prev == null) {
+            this[LISTENERS][type] = newNode(listener, ATTRIBUTE);
+          }
+          else {
+            prev.next = newNode(listener, ATTRIBUTE);
+          }
+        }
+      },
+      writable: true,
+      configurable: true
     }
-  };
-}
+  }
+);
 
-export default EventTarget;
+export default ET;

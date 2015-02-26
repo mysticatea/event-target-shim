@@ -2,7 +2,7 @@
 import "babel/polyfill";
 import chai, {expect} from "chai";
 import spies from "chai-spies";
-import EventTarget from "../src/index";
+import EventTarget from "../src/EventTarget";
 
 chai.use(spies);
 
@@ -32,6 +32,16 @@ describe("EventTarget:", () => {
   //
   // Let's test!
   //
+
+  if (typeof window !== "undefined" && typeof window.EventTarget !== "undefined") {
+    it("should be instanceof `window.EventTarget`.", () => {
+      expect(target).to.be.instanceof(window.EventTarget);
+    });
+
+    it("should not equal `EventTarget` and `window.EventTarget`.", () => {
+      expect(EventTarget).to.not.equal(window.EventTarget);
+    });
+  }
 
   it("should call registered listeners on called `dispatchEvent()`.", () => {
     let lastEvent = null;
@@ -187,12 +197,17 @@ describe("EventTarget with attribute listeners:", () => {
   // Let's test!
   //
 
+  it("should properties of attribute listener are null by default.", () => {
+    expect(target.ontest).to.be.null;
+  });
+
   it("should call attribute listeners when called `dispatchEvent()`.", () => {
     let listener = chai.spy();
     let event = createEvent("test");
     target.ontest = listener;
     target.dispatchEvent(event);
 
+    expect(target.ontest).to.equal(listener);
     expect(listener).to.have.been.called.once;
   });
 
@@ -203,6 +218,7 @@ describe("EventTarget with attribute listeners:", () => {
     target.ontest = null;
     target.dispatchEvent(event);
 
+    expect(target.ontest).to.be.null;
     expect(listener).to.not.have.been.called();
   });
 
@@ -213,6 +229,7 @@ describe("EventTarget with attribute listeners:", () => {
     target.ontest = listener;
     target.dispatchEvent(event);
 
+    expect(target.ontest).to.equal(listener);
     expect(listener).to.have.been.called.once;
   });
 });

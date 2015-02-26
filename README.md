@@ -7,13 +7,10 @@ See Also: https://dom.spec.whatwg.org/#interface-eventtarget
 
 ## Overview
 
-~~This module uses native implementation of EventTarget if it exists.~~
-~~otherwise, defines shim.~~
+This module provides `EventTarget` constructor that can inherit for your custom object.
+And this module provides an utility to define properties for attribute listeners (e.g. `obj.onclick`).
 
-Ummm, occured `Illegal constructor` exception at native.
-This module always defines shim.
-
-And this provides an utility to define properties for attribute listeners (e.g. `obj.onclick`).
+If `window.EventTarget` exists, `EventTarget` is inherit from `window.EventTarget`.
 
 ```ts
 declare class EventTarget {
