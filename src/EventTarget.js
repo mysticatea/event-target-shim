@@ -16,7 +16,8 @@ function defineAttributeListener(type) {
     "on${type}": {
       get: function() { return this[GET_ATTRIBUTE_LISTENER]("${type}"); },
       set: function(value) { this[SET_ATTRIBUTE_LISTENER]("${type}", value); },
-      configurable: true
+      configurable: true,
+      enumerable: true
     },
   `;
 }

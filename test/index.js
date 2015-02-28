@@ -6,6 +6,11 @@ import EventTarget from "../src/EventTarget";
 
 chai.use(spies);
 
+const HAS_EVENT_TARGET_INTERFACE =
+  (typeof window !== "undefined" && typeof window.EventTarget !== "undefined");
+const IS_CHROME =
+  (typeof navigator !== "undefined" && /Chrome/.test(navigator.userAgent));
+
 // A helper to create an event.
 function createEvent(type, bubbles = false, cancelable = false, detail = null) {
   let event = document.createEvent("Event");
@@ -33,15 +38,13 @@ describe("EventTarget:", () => {
   // Let's test!
   //
 
-  if (typeof window !== "undefined" && typeof window.EventTarget !== "undefined") {
-    it("should be instanceof `window.EventTarget`.", () => {
-      expect(target).to.be.instanceof(window.EventTarget);
-    });
+  (HAS_EVENT_TARGET_INTERFACE ? it : xit)("should be instanceof `window.EventTarget`.", () => {
+    expect(target).to.be.instanceof(window.EventTarget);
+  });
 
-    it("should not equal `EventTarget` and `window.EventTarget`.", () => {
-      expect(EventTarget).to.not.equal(window.EventTarget);
-    });
-  }
+  (HAS_EVENT_TARGET_INTERFACE ? it : xit)("should not equal `EventTarget` and `window.EventTarget`.", () => {
+    expect(EventTarget).to.not.equal(window.EventTarget);
+  });
 
   it("should call registered listeners on called `dispatchEvent()`.", () => {
     let lastEvent = null;
@@ -199,6 +202,17 @@ describe("EventTarget with attribute listeners:", () => {
 
   it("should properties of attribute listener are null by default.", () => {
     expect(target.ontest).to.be.null;
+  });
+
+  // V8 has a bug.
+  // See Also: https://code.google.com/p/v8/issues/detail?id=705
+  (IS_CHROME ? xit : it)("should properties of attribute listener are enumerable.", () => {
+    let keys = [];
+    for (let key in target) {
+      keys.push(key);
+    }
+
+    expect(keys).to.deep.equal(["ontest"]);
   });
 
   it("should call attribute listeners when called `dispatchEvent()`.", () => {
