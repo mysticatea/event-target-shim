@@ -1,10 +1,10 @@
-"use strict";
 import "babel/polyfill";
-import chai, {expect} from "chai";
-import spies from "chai-spies";
-import EventTarget from "../src/EventTarget";
+import assert from "power-assert";
+import spy from "spy";
 
-chai.use(spies);
+// Test Target.
+import EventTarget from "../lib/EventTarget";
+
 
 const HAS_EVENT_TARGET_INTERFACE =
   (typeof window !== "undefined" && typeof window.EventTarget !== "undefined");
@@ -39,144 +39,146 @@ describe("EventTarget:", () => {
   //
 
   (HAS_EVENT_TARGET_INTERFACE ? it : xit)("should be instanceof `window.EventTarget`.", () => {
-    expect(target).to.be.instanceof(window.EventTarget);
+    assert(target instanceof window.EventTarget);
   });
 
   (HAS_EVENT_TARGET_INTERFACE ? it : xit)("should not equal `EventTarget` and `window.EventTarget`.", () => {
-    expect(EventTarget).to.not.equal(window.EventTarget);
+    assert(EventTarget !== window.EventTarget);
   });
 
   it("should call registered listeners on called `dispatchEvent()`.", () => {
     let lastEvent = null;
-    let listener = chai.spy(e => { lastEvent = e; });
-    let listener2 = chai.spy();
+    let listener = spy(e => { lastEvent = e; });
+    let listener2 = spy();
     let event = createEvent("test", false, false, "detail");
     target.addEventListener("test", listener);
     target.addEventListener("test", listener2);
     target.dispatchEvent(event);
 
-    expect(listener).to.have.been.called.once;
-    expect(listener2).to.have.been.called.once;
-    expect(lastEvent.type).to.equal("test");
-    expect(lastEvent.target).to.equal(target);
-    expect(lastEvent.currentTarget).to.equal(target);
-    expect(lastEvent.eventPhase).to.equal(2);
-    expect(lastEvent.bubbles).to.equal(false);
-    expect(lastEvent.cancelable).to.equal(false);
-    expect(lastEvent.defaultPrevented).to.equal(false);
-    expect(lastEvent.isTrusted).to.equal(false);
-    expect(lastEvent.timeStamp).to.equal(event.timeStamp);
-    expect(lastEvent.detail).to.equal("detail");
+    assert(listener.callCount === 1);
+    assert(listener2.callCount === 1);
+    assert(lastEvent.type === "test");
+    assert(lastEvent.target === target);
+    assert(lastEvent.currentTarget === target);
+    assert(lastEvent.eventPhase === 2);
+    assert(lastEvent.bubbles === false);
+    assert(lastEvent.cancelable === false);
+    assert(lastEvent.defaultPrevented === false);
+    assert(lastEvent.isTrusted === false);
+    assert(lastEvent.timeStamp === event.timeStamp);
+    assert(lastEvent.detail === "detail");
   });
 
   it("should not call removed listeners.", () => {
-    let listener = chai.spy();
+    let listener = spy();
     let event = createEvent("test");
     target.addEventListener("test", listener);
     target.removeEventListener("test", listener);
     target.dispatchEvent(event);
 
-    expect(listener).to.not.have.been.called();
+    assert(listener.called === false);
   });
 
   it("it should not allow duplicate in listeners.", () => {
-    let listener = chai.spy();
+    let listener = spy();
     let event = createEvent("test");
     target.addEventListener("test", listener);
     target.addEventListener("test", listener);
     target.dispatchEvent(event);
 
-    expect(listener).to.have.been.called.once;
+    assert(listener.callCount === 1);
   });
 
   it("should allow duplicate in listeners if those capture flag are different.", () => {
-    let listener = chai.spy();
+    let listener = spy();
     let event = createEvent("test");
     target.addEventListener("test", listener, true);
     target.addEventListener("test", listener, false);
     target.dispatchEvent(event);
 
-    expect(listener).to.have.been.called.twice;
+    assert(listener.callCount === 2);
   });
 
   it("should not call registered listeners if its type is different.", () => {
-    let listener = chai.spy();
+    let listener = spy();
     let event = createEvent("test");
     target.addEventListener("test2", listener);
     target.dispatchEvent(event);
 
-    expect(listener).to.not.have.been.called();
+    assert(listener.called === false);
   });
 
   it("a result of `dispatchEvent()` should be true if hadn't canceled by listeners.", () => {
-    let listener = chai.spy();
+    let listener = spy();
     let event = createEvent("test");
     target.addEventListener("test", listener);
     let result = target.dispatchEvent(event);
 
-    expect(result).to.be.true;
+    assert(result === true);
   });
 
   it("a result of `dispatchEvent()` should be false if had canceled by listeners.", () => {
-    let listener = chai.spy(e => e.preventDefault());
+    let listener = spy(e => e.preventDefault());
     let event = createEvent("test", false, true);
     target.addEventListener("test", listener);
     let result = target.dispatchEvent(event);
 
-    expect(result).to.be.false;
+    assert(result === false);
   });
 
   it("should be not possible to cancel if the event cannot cancel.", () => {
-    let listener = chai.spy(e => e.preventDefault());
+    let listener = spy(e => e.preventDefault());
     let event = createEvent("test");
     target.addEventListener("test", listener);
     let result = target.dispatchEvent(event);
 
-    expect(result).to.be.true;
+    assert(result === true);
   });
 
   it("should stop calling registered listeners immediately when called `e.stopImmediatePropagation()` by a listener.", () => {
-    let listener1 = chai.spy(e => e.stopImmediatePropagation());
-    let listener2 = chai.spy();
+    let listener1 = spy(e => e.stopImmediatePropagation());
+    let listener2 = spy();
     let event = createEvent("test");
     target.addEventListener("test", listener1);
     target.addEventListener("test", listener2);
     let result = target.dispatchEvent(event);
 
-    expect(listener1).to.have.been.called.once;
-    expect(listener2).to.not.have.been.called();
+    assert(listener1.callCount === 1);
+    assert(listener2.called === false);
+    assert(result === true);
   });
 
   it("should call registered listeners if a listener removed me.", () => {
-    let listener1 = chai.spy(e => target.removeEventListener(listener1));
-    let listener2 = chai.spy();
+    let listener1 = spy(() => target.removeEventListener(listener1));
+    let listener2 = spy();
     let event = createEvent("test");
     target.addEventListener("test", listener1);
     target.addEventListener("test", listener2);
     let result = target.dispatchEvent(event);
 
-    expect(listener1).to.have.been.called.once;
-    expect(listener2).to.have.been.called.once;
+    assert(listener1.callCount === 1);
+    assert(listener2.callCount === 1);
+    assert(result === true);
   });
 
   it("should be possible to call `dispatchEvent()` with a plain object.", () => {
     let lastEvent = null;
-    let listener = chai.spy(e => { lastEvent = e; });
+    let listener = spy(e => { lastEvent = e; });
     let event = {type: "test", detail: "detail"};
     target.addEventListener("test", listener);
     target.dispatchEvent(event);
 
-    expect(listener).to.have.been.called.once;
-    expect(lastEvent.type).to.equal("test");
-    expect(lastEvent.target).to.equal(target);
-    expect(lastEvent.currentTarget).to.equal(target);
-    expect(lastEvent.eventPhase).to.equal(2);
-    expect(lastEvent.bubbles).to.equal(false);
-    expect(lastEvent.cancelable).to.equal(false);
-    expect(lastEvent.defaultPrevented).to.equal(false);
-    expect(lastEvent.isTrusted).to.equal(false);
-    expect(lastEvent.timeStamp).to.be.a("number");
-    expect(lastEvent.detail).to.equal("detail");
+    assert(listener.callCount === 1);
+    assert(lastEvent.type === "test");
+    assert(lastEvent.target === target);
+    assert(lastEvent.currentTarget === target);
+    assert(lastEvent.eventPhase === 2);
+    assert(lastEvent.bubbles === false);
+    assert(lastEvent.cancelable === false);
+    assert(lastEvent.defaultPrevented === false);
+    assert(lastEvent.isTrusted === false);
+    assert(typeof lastEvent.timeStamp === "number");
+    assert(lastEvent.detail === "detail");
   });
 
 });
@@ -201,7 +203,7 @@ describe("EventTarget with attribute listeners:", () => {
   //
 
   it("should properties of attribute listener are null by default.", () => {
-    expect(target.ontest).to.be.null;
+    assert(target.ontest === null);
   });
 
   // V8 has a bug.
@@ -212,38 +214,38 @@ describe("EventTarget with attribute listeners:", () => {
       keys.push(key);
     }
 
-    expect(keys).to.deep.equal(["ontest"]);
+    assert.deepEqual(keys, ["ontest"]);
   });
 
   it("should call attribute listeners when called `dispatchEvent()`.", () => {
-    let listener = chai.spy();
+    let listener = spy();
     let event = createEvent("test");
     target.ontest = listener;
     target.dispatchEvent(event);
 
-    expect(target.ontest).to.equal(listener);
-    expect(listener).to.have.been.called.once;
+    assert(target.ontest === listener);
+    assert(listener.callCount === 1);
   });
 
   it("should not call removed listeners.", () => {
-    let listener = chai.spy();
+    let listener = spy();
     let event = createEvent("test");
     target.ontest = listener;
     target.ontest = null;
     target.dispatchEvent(event);
 
-    expect(target.ontest).to.be.null;
-    expect(listener).to.not.have.been.called();
+    assert(target.ontest === null);
+    assert(listener.called === false);
   });
 
   it("it should not allow duplicate in listeners.", () => {
-    let listener = chai.spy();
+    let listener = spy();
     let event = createEvent("test");
     target.ontest = listener;
     target.ontest = listener;
     target.dispatchEvent(event);
 
-    expect(target.ontest).to.equal(listener);
-    expect(listener).to.have.been.called.once;
+    assert(target.ontest === listener);
+    assert(listener.callCount === 1);
   });
 });

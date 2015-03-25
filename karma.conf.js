@@ -12,8 +12,11 @@ module.exports = function(config) {
     },
     browserify: {
       debug: true,
-      transform: ["babelify"],
-      extensions: [".js"]
+      extensions: [".js"],
+      transform: [
+        ["babelify", {"optional": ["utility.inlineEnvironmentVariables"]}],
+        "espowerify"
+      ]
     }
   });
 };

@@ -1,0 +1,7 @@
+{
+  "env": {"mocha": true},
+  "rules": {
+    // To use `class TestTarget extends EventTarget("test") {}`
+    "new-cap": 0
+  }
+}

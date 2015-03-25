@@ -1,4 +1,3 @@
-"use strict";
 import {createEventWrapper, STOP_IMMEDIATE_PROPAGATION_FLAG, DISPATCH_FLAG,
         CANCELED_FLAG} from "./EventWrapper";
 
@@ -8,6 +7,8 @@ const GET_ATTRIBUTE_LISTENER = Symbol("getAttributeListener");
 const CAPTURE = 1;
 const BUBBLE = 2;
 const ATTRIBUTE = 3;
+const HAS_EVENTTARGET_INTERFACE =
+  (typeof window !== "undefined" && typeof window.EventTarget !== "undefined");
 
 // Return definition of an attribute listener.
 function defineAttributeListener(type) {
@@ -75,7 +76,7 @@ let ET = function EventTarget(...types) {
 };
 
 ET.prototype = Object.create(
-  (typeof EventTarget === "function" ? EventTarget : Object).prototype,
+  (HAS_EVENTTARGET_INTERFACE ? window.EventTarget : Object).prototype,
   {
     constructor: {
       value: ET,
@@ -89,7 +90,7 @@ ET.prototype = Object.create(
           return false;
         }
         if (typeof listener !== "function") {
-          throw TypeError("listener should be a function.");
+          throw new TypeError("listener should be a function.");
         }
 
         let kind = (capture ? CAPTURE : BUBBLE);
@@ -150,7 +151,7 @@ ET.prototype = Object.create(
       value: function dispatchEvent(event) {
         // Should check initialized flag, but impossible.
         if (event[DISPATCH_FLAG]) {
-          throw Error("InvalidStateError");
+          throw new Error("InvalidStateError");
         }
 
         // If listeners aren't registered, terminate.
@@ -196,7 +197,7 @@ ET.prototype = Object.create(
     [SET_ATTRIBUTE_LISTENER]: {
       value: function setAttributeListener(type, listener) {
         if (listener != null && typeof listener !== "function") {
-          throw TypeError("listener should be a function.");
+          throw new TypeError("listener should be a function.");
         }
 
         let prev = null;

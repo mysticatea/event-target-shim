@@ -1,5 +1,3 @@
-"use strict";
-
 export const STOP_IMMEDIATE_PROPAGATION_FLAG = Symbol("stop immediate propagation flag");
 export const CANCELED_FLAG = Symbol("canceled flag");
 export const DISPATCH_FLAG = Symbol("dispatch flag");
@@ -54,4 +52,4 @@ export function createEventWrapper(event, eventTarget) {
         [DISPATCH_FLAG]: {value: true, writable: true}
       }
     );
-};
+}
