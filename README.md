@@ -1,5 +1,7 @@
 # event-target-shim
 
+[![npm version](https://badge.fury.io/js/event-target-shim.svg)](http://badge.fury.io/js/event-target-shim)
+
 A polyfill for W3C EventTarget, plus few extensions.
 
 See Also: https://dom.spec.whatwg.org/#interface-eventtarget
@@ -7,32 +9,36 @@ See Also: https://dom.spec.whatwg.org/#interface-eventtarget
 
 ## Overview
 
-This module provides `EventTarget` constructor that can inherit for your custom object.
-And this module provides an utility to define properties for attribute listeners (e.g. `obj.onclick`).
+- This module provides `EventTarget` constructor that is possible to inherit for
+  your custom object.
+- This module provides an utility in order to define properties for attribute
+  listeners (e.g. `obj.onclick`).
 
-If `window.EventTarget` exists, `EventTarget` is inherit from `window.EventTarget`.
+If `window.EventTarget` exists, `EventTarget` is inherit from
+`window.EventTarget`.
+In short, `obj instanceof window.EventTarget === true`.
 
 ```ts
 declare class EventTarget {
-  addEventListener(type: string, listener: (event: Event) => void, capture?: boolean = false): void;
-  removeEventListener(type: string, listener: (event: Event) => void, capture?: boolean = false): void;
+  constructor();
+  addEventListener(type: string, listener: (event: Event) => void, capture?: boolean): void;
+  removeEventListener(type: string, listener: (event: Event) => void, capture?: boolean): void;
   dispatchEvent(event: Event): void;
 }
 
 // Define EventTarget type with attribute listeners.
-declare function EventTarget(...types: string[]): typeof(EventTarget);
+declare function EventTarget(...types: string[]): typeof EventTarget;
 ```
 
 
 ## Installation
 
 ```
-npm install event-target-shim --save
+npm install event-target-shim
 ```
 
-## Usage
 
-This module has been designed that uses together [Browserify](http://browserify.org/).
+## Usage
 
 ```js
 import EventTarget from "event-target-shim";
@@ -45,17 +51,29 @@ class YourCoolType extends EventTarget {
 class YourAwesomeType extends EventTarget("message", "error") {
   // ...
 }
-
-// Dispatch with an Event.
-{
-  let event = document.createEvent("Event");
-  event.initEvent("message", false, false);
-  event.data = "Hello!";
-  obj.dispatchEvent(event);
-}
-
-// Dispatch with a plain object.
-{
-  obj.dispatchEvent({type: "message", data: "Hello!"});
-}
 ```
+
+I prefer use together with [Browserify](http://browserify.org).
+But we can use together with [RequireJS](http://requirejs.org/), instead.
+
+```js
+define("MagicalBox", ["event-target-shim"], function (EventTarget) {
+  function MagicalBox() {
+    EventTarget.call(this);
+  }
+
+  MagicalBox.prototype = Object.create(EventTarget.prototype, {
+    constructor: {
+      value: MagicalBox,
+      configurable: true,
+      writable: true
+    },
+
+    // ...
+  });
+
+  return MagicalBox;
+});
+```
+
+In this case, please download a file from dist directory of repo.

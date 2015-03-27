@@ -13,10 +13,7 @@ module.exports = function(config) {
     browserify: {
       debug: true,
       extensions: [".js"],
-      transform: [
-        ["babelify", {"optional": ["utility.inlineEnvironmentVariables"]}],
-        "espowerify"
-      ]
+      transform: ["babelify", "espowerify"]
     }
   });
 };

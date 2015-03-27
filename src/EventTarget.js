@@ -1,37 +1,15 @@
-import {createEventWrapper, STOP_IMMEDIATE_PROPAGATION_FLAG, DISPATCH_FLAG,
+import {LISTENERS, CAPTURE, BUBBLE, newNode} from "./commons";
+import {defineCustomEventTarget} from "./CustomEventTarget";
+import {createEventWrapper,
+        STOP_IMMEDIATE_PROPAGATION_FLAG,
+        DISPATCH_FLAG,
         CANCELED_FLAG} from "./EventWrapper";
 
-const LISTENERS = Symbol("listeners");
-const SET_ATTRIBUTE_LISTENER = Symbol("setAttributeListener");
-const GET_ATTRIBUTE_LISTENER = Symbol("getAttributeListener");
-const CAPTURE = 1;
-const BUBBLE = 2;
-const ATTRIBUTE = 3;
 const HAS_EVENTTARGET_INTERFACE =
   (typeof window !== "undefined" && typeof window.EventTarget !== "undefined");
 
-// Return definition of an attribute listener.
-function defineAttributeListener(type) {
-  type = type.replace(/"/g, "\\\"");
-  return `
-    "on${type}": {
-      get: function() { return this[GET_ATTRIBUTE_LISTENER]("${type}"); },
-      set: function(value) { this[SET_ATTRIBUTE_LISTENER]("${type}", value); },
-      configurable: true,
-      enumerable: true
-    },
-  `;
-}
 
-// Create a LinkedList structure for EventListener.
-function newNode(listener, kind) {
-  return {listener, kind, next: null};
-}
-
-//
-// Class Definition.
-//
-let ET = function EventTarget(...types) {
+export default function EventTarget(...types) {
   if (this instanceof EventTarget) {
     // this[LISTENERS] is a Map.
     // Its key is event type.
@@ -50,36 +28,18 @@ let ET = function EventTarget(...types) {
     //     class MyCustomObject extends EventTarget("message", "error") {
     //       //...
     //     }
-    return Function(
-      "EventTargetBase",
-      "GET_ATTRIBUTE_LISTENER",
-      "SET_ATTRIBUTE_LISTENER",
-      `
-        function EventTarget() {
-          EventTargetBase.call(this);
-        }
-        EventTarget.prototype = Object.create(EventTargetBase.prototype, {
-          ${types.map(defineAttributeListener).join()}
-          constructor: {
-            value: EventTarget,
-            writable: true,
-            configurable: true
-          }
-        });
-        return EventTarget;
-      `
-    )(EventTarget, GET_ATTRIBUTE_LISTENER, SET_ATTRIBUTE_LISTENER);
+    return defineCustomEventTarget(EventTarget, types);
   }
   else {
     throw new TypeError("Cannot call a class as a function");
   }
-};
+}
 
-ET.prototype = Object.create(
+EventTarget.prototype = Object.create(
   (HAS_EVENTTARGET_INTERFACE ? window.EventTarget : Object).prototype,
   {
     constructor: {
-      value: ET,
+      value: EventTarget,
       writable: true,
       configurable: true
     },
@@ -113,8 +73,8 @@ ET.prototype = Object.create(
         prev.next = newNode(listener, kind);
         return true;
       },
-      writable: true,
-      configurable: true
+      configurable: true,
+      writable: true
     },
 
     removeEventListener: {
@@ -143,8 +103,8 @@ ET.prototype = Object.create(
 
         return false;
       },
-      writable: true,
-      configurable: true
+      configurable: true,
+      writable: true
     },
 
     dispatchEvent: {
@@ -175,64 +135,8 @@ ET.prototype = Object.create(
 
         return !event[CANCELED_FLAG];
       },
-      writable: true,
-      configurable: true
-    },
-
-    [GET_ATTRIBUTE_LISTENER]: {
-      value: function getAttributeListener(type) {
-        let node = this[LISTENERS][type];
-        while (node != null) {
-          if (node.kind === ATTRIBUTE) {
-            return node.listener;
-          }
-          node = node.next;
-        }
-        return null;
-      },
-      writable: true,
-      configurable: true
-    },
-
-    [SET_ATTRIBUTE_LISTENER]: {
-      value: function setAttributeListener(type, listener) {
-        if (listener != null && typeof listener !== "function") {
-          throw new TypeError("listener should be a function.");
-        }
-
-        let prev = null;
-        let node = this[LISTENERS][type];
-        while (node != null) {
-          if (node.kind === ATTRIBUTE) {
-            // Remove old value.
-            if (prev == null) {
-              this[LISTENERS][type] = node.next;
-            }
-            else {
-              prev.next = node.next;
-            }
-          }
-          else {
-            prev = node;
-          }
-
-          node = node.next;
-        }
-
-        // Add new value.
-        if (listener != null) {
-          if (prev == null) {
-            this[LISTENERS][type] = newNode(listener, ATTRIBUTE);
-          }
-          else {
-            prev.next = newNode(listener, ATTRIBUTE);
-          }
-        }
-      },
-      writable: true,
-      configurable: true
+      configurable: true,
+      writable: true
     }
   }
 );
-
-export default ET;
