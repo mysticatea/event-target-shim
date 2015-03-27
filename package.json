@@ -1,9 +1,12 @@
 {
   "name": "event-target-shim",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A polyfill for W3C EventTarget Constructor.",
   "main": "lib/EventTarget.js",
-  "files": ["dist", "lib"],
+  "files": [
+    "dist",
+    "lib"
+  ],
   "scripts": {
     "clean": "rimraf lib dist",
     "lint": "eslint src",
