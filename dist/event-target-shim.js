@@ -103,8 +103,6 @@ var _EventWrapper = require("./EventWrapper");
 
 var createEventWrapper = _EventWrapper.createEventWrapper;
 var STOP_IMMEDIATE_PROPAGATION_FLAG = _EventWrapper.STOP_IMMEDIATE_PROPAGATION_FLAG;
-var DISPATCH_FLAG = _EventWrapper.DISPATCH_FLAG;
-var CANCELED_FLAG = _EventWrapper.CANCELED_FLAG;
 
 var HAS_EVENTTARGET_INTERFACE = typeof window !== "undefined" && typeof window.EventTarget !== "undefined";
 
@@ -123,7 +121,7 @@ function EventTarget() {
     //   let kind: CAPTURE|BUBBLE|ATTRIBUTE
     //   let next: ListenerNode|null
     // }
-    this[LISTENERS] = Object.create(null);
+    Object.defineProperty(this, LISTENERS, { value: Object.create(null) });
   } else if (types.length > 0) {
     // To use to extend with attribute listener properties.
     // e.g.
@@ -211,11 +209,6 @@ EventTarget.prototype = Object.create((HAS_EVENTTARGET_INTERFACE ? window.EventT
 
   dispatchEvent: {
     value: function dispatchEvent(event) {
-      // Should check initialized flag, but impossible.
-      if (event[DISPATCH_FLAG]) {
-        throw new Error("InvalidStateError");
-      }
-
       // If listeners aren't registered, terminate.
       var node = this[LISTENERS][event.type];
       if (node == null) {
@@ -235,7 +228,7 @@ EventTarget.prototype = Object.create((HAS_EVENTTARGET_INTERFACE ? window.EventT
         node = node.next;
       }
 
-      return !event[CANCELED_FLAG];
+      return !event.defaultPrevented;
     },
     configurable: true,
     writable: true
@@ -250,35 +243,55 @@ exports.createEventWrapper = createEventWrapper;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-var STOP_IMMEDIATE_PROPAGATION_FLAG = Symbol("stop immediate propagation flag");
-exports.STOP_IMMEDIATE_PROPAGATION_FLAG = STOP_IMMEDIATE_PROPAGATION_FLAG;
-var CANCELED_FLAG = Symbol("canceled flag");
-exports.CANCELED_FLAG = CANCELED_FLAG;
-var DISPATCH_FLAG = Symbol("dispatch flag");
 
-exports.DISPATCH_FLAG = DISPATCH_FLAG;
+var symbol = require("./commons").symbol;
+
+var STOP_IMMEDIATE_PROPAGATION_FLAG = symbol("stop_immediate_propagation_flag");
+
+exports.STOP_IMMEDIATE_PROPAGATION_FLAG = STOP_IMMEDIATE_PROPAGATION_FLAG;
+var CANCELED_FLAG = symbol("canceled_flag");
+var ORIGINAL_EVENT = symbol("original_event");
+
 var wrapperPrototypeDefinition = {
   stopPropagation: {
-    value: function stopPropagation() {},
-    writable: true,
-    configurable: true
-  },
-  stopImmediatePropagation: {
-    value: function stopImmediatePropagation() {
-      this[STOP_IMMEDIATE_PROPAGATION_FLAG] = true;
-    },
-    writable: true,
-    configurable: true
-  },
-  preventDefault: {
-    value: function preventDefault() {
-      if (this.cancelable === true) {
-        this[CANCELED_FLAG] = true;
+    value: function stopPropagation() {
+      var e = this[ORIGINAL_EVENT];
+      if (typeof e.stopPropagation === "function") {
+        e.stopPropagation();
       }
     },
     writable: true,
     configurable: true
   },
+
+  stopImmediatePropagation: {
+    value: function stopImmediatePropagation() {
+      this[STOP_IMMEDIATE_PROPAGATION_FLAG] = true;
+
+      var e = this[ORIGINAL_EVENT];
+      if (typeof e.stopImmediatePropagation === "function") {
+        e.stopImmediatePropagation();
+      }
+    },
+    writable: true,
+    configurable: true
+  },
+
+  preventDefault: {
+    value: function preventDefault() {
+      if (this.cancelable === true) {
+        this[CANCELED_FLAG] = true;
+      }
+
+      var e = this[ORIGINAL_EVENT];
+      if (typeof e.preventDefault === "function") {
+        e.preventDefault();
+      }
+    },
+    writable: true,
+    configurable: true
+  },
+
   defaultPrevented: {
     get: function get() {
       return this[CANCELED_FLAG];
@@ -306,12 +319,12 @@ function createEventWrapper(event, eventTarget) {
 
     _defineProperty(_Object$create, CANCELED_FLAG, { value: false, writable: true });
 
-    _defineProperty(_Object$create, DISPATCH_FLAG, { value: true, writable: true });
+    _defineProperty(_Object$create, ORIGINAL_EVENT, { value: event });
 
     return _Object$create;
   })());
 }
-},{}],4:[function(require,module,exports){
+},{"./commons":4}],4:[function(require,module,exports){
 
 
 // Create a LinkedList structure for EventListener.
@@ -321,7 +334,12 @@ exports.newNode = newNode;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-var LISTENERS = Symbol("listeners");
+var symbol = typeof Symbol !== "undefined" ? Symbol : function Symbol(name) {
+  return "[[" + name + "_" + Math.random().toFixed(8).slice(2) + "]]";
+};
+
+exports.symbol = symbol;
+var LISTENERS = symbol("listeners");
 exports.LISTENERS = LISTENERS;
 var CAPTURE = 1;
 exports.CAPTURE = CAPTURE;

@@ -1,29 +1,51 @@
-export const STOP_IMMEDIATE_PROPAGATION_FLAG = Symbol("stop immediate propagation flag");
-export const CANCELED_FLAG = Symbol("canceled flag");
-export const DISPATCH_FLAG = Symbol("dispatch flag");
+import {symbol} from "./commons";
+
+export const STOP_IMMEDIATE_PROPAGATION_FLAG =
+  symbol("stop_immediate_propagation_flag");
+
+const CANCELED_FLAG = symbol("canceled_flag");
+const ORIGINAL_EVENT = symbol("original_event");
 
 let wrapperPrototypeDefinition = {
   stopPropagation: {
-    value: function stopPropagation() {},
-    writable: true,
-    configurable: true
-  },
-  stopImmediatePropagation: {
-    value: function stopImmediatePropagation() {
-      this[STOP_IMMEDIATE_PROPAGATION_FLAG] = true;
-    },
-    writable: true,
-    configurable: true
-  },
-  preventDefault: {
-    value: function preventDefault() {
-      if (this.cancelable === true) {
-        this[CANCELED_FLAG] = true;
+    value: function stopPropagation() {
+      const e = this[ORIGINAL_EVENT];
+      if (typeof e.stopPropagation === "function") {
+        e.stopPropagation();
       }
     },
     writable: true,
     configurable: true
   },
+
+  stopImmediatePropagation: {
+    value: function stopImmediatePropagation() {
+      this[STOP_IMMEDIATE_PROPAGATION_FLAG] = true;
+
+      const e = this[ORIGINAL_EVENT];
+      if (typeof e.stopImmediatePropagation === "function") {
+        e.stopImmediatePropagation();
+      }
+    },
+    writable: true,
+    configurable: true
+  },
+
+  preventDefault: {
+    value: function preventDefault() {
+      if (this.cancelable === true) {
+        this[CANCELED_FLAG] = true;
+      }
+
+      const e = this[ORIGINAL_EVENT];
+      if (typeof e.preventDefault === "function") {
+        e.preventDefault();
+      }
+    },
+    writable: true,
+    configurable: true
+  },
+
   defaultPrevented: {
     get: function() { return this[CANCELED_FLAG]; },
     enumerable: true,
@@ -49,7 +71,7 @@ export function createEventWrapper(event, eventTarget) {
         isTrusted: {value: false, enumerable: true},
         [STOP_IMMEDIATE_PROPAGATION_FLAG]: {value: false, writable: true},
         [CANCELED_FLAG]: {value: false, writable: true},
-        [DISPATCH_FLAG]: {value: true, writable: true}
+        [ORIGINAL_EVENT]: {value: event}
       }
     );
 }

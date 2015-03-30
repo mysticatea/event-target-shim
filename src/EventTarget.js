@@ -1,9 +1,7 @@
 import {LISTENERS, CAPTURE, BUBBLE, newNode} from "./commons";
 import {defineCustomEventTarget} from "./CustomEventTarget";
 import {createEventWrapper,
-        STOP_IMMEDIATE_PROPAGATION_FLAG,
-        DISPATCH_FLAG,
-        CANCELED_FLAG} from "./EventWrapper";
+        STOP_IMMEDIATE_PROPAGATION_FLAG} from "./EventWrapper";
 
 const HAS_EVENTTARGET_INTERFACE =
   (typeof window !== "undefined" && typeof window.EventTarget !== "undefined");
@@ -20,7 +18,7 @@ export default function EventTarget(...types) {
     //   let kind: CAPTURE|BUBBLE|ATTRIBUTE
     //   let next: ListenerNode|null
     // }
-    this[LISTENERS] = Object.create(null);
+    Object.defineProperty(this, LISTENERS, {value: Object.create(null)});
   }
   else if (types.length > 0) {
     // To use to extend with attribute listener properties.
@@ -109,11 +107,6 @@ EventTarget.prototype = Object.create(
 
     dispatchEvent: {
       value: function dispatchEvent(event) {
-        // Should check initialized flag, but impossible.
-        if (event[DISPATCH_FLAG]) {
-          throw new Error("InvalidStateError");
-        }
-
         // If listeners aren't registered, terminate.
         let node = this[LISTENERS][event.type];
         if (node == null) {
@@ -133,7 +126,7 @@ EventTarget.prototype = Object.create(
           node = node.next;
         }
 
-        return !event[CANCELED_FLAG];
+        return !event.defaultPrevented;
       },
       configurable: true,
       writable: true
