@@ -54,7 +54,9 @@ class YourAwesomeType extends EventTarget("message", "error") {
 ```
 
 I prefer use together with [Browserify](http://browserify.org).
+
 But we can use together with [RequireJS](http://requirejs.org/), instead.
+In this case, please download a file from dist directory of repo.
 
 ```js
 define("MagicalBox", ["event-target-shim"], function (EventTarget) {
@@ -75,5 +77,3 @@ define("MagicalBox", ["event-target-shim"], function (EventTarget) {
   return MagicalBox;
 });
 ```
-
-In this case, please download a file from dist directory of repo.
