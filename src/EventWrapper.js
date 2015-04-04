@@ -54,11 +54,11 @@ let wrapperPrototypeDefinition = {
 };
 
 export function createEventWrapper(event, eventTarget) {
-    let timeStamp = (typeof event.timeStamp === "number"
+    const timeStamp = (typeof event.timeStamp === "number"
       ? event.timeStamp
       : Date.now());
 
-    return Object.create(
+    let retv = Object.create(
       Object.create(event, wrapperPrototypeDefinition),
       {
         type: {value: event.type, enumerable: true},
@@ -68,10 +68,13 @@ export function createEventWrapper(event, eventTarget) {
         bubbles: {value: Boolean(event.bubbles), enumerable: true},
         cancelable: {value: Boolean(event.cancelable), enumerable: true},
         timeStamp: {value: timeStamp, enumerable: true},
-        isTrusted: {value: false, enumerable: true},
-        [STOP_IMMEDIATE_PROPAGATION_FLAG]: {value: false, writable: true},
-        [CANCELED_FLAG]: {value: false, writable: true},
-        [ORIGINAL_EVENT]: {value: event}
+        isTrusted: {value: false, enumerable: true}
       }
     );
+    Object.defineProperty(
+      retv, STOP_IMMEDIATE_PROPAGATION_FLAG, {value: false, writable: true});
+    Object.defineProperty(retv, CANCELED_FLAG, {value: false, writable: true});
+    Object.defineProperty(retv, ORIGINAL_EVENT, {value: event});
+
+    return retv;
 }

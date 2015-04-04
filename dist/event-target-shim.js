@@ -1,21 +1,17 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.eventTargetShim = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
 
-exports.defineCustomEventTarget = defineCustomEventTarget;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.defineCustomEventTarget = defineCustomEventTarget;
 
-var _commons = require("./commons");
-
-var LISTENERS = _commons.LISTENERS;
-var ATTRIBUTE = _commons.ATTRIBUTE;
-var newNode = _commons.newNode;
+var _LISTENERS$ATTRIBUTE$newNode = require("./commons");
 
 function getAttributeListener(eventTarget, type) {
-  var node = eventTarget[LISTENERS][type];
+  var node = eventTarget[_LISTENERS$ATTRIBUTE$newNode.LISTENERS][type];
   while (node != null) {
-    if (node.kind === ATTRIBUTE) {
+    if (node.kind === _LISTENERS$ATTRIBUTE$newNode.ATTRIBUTE) {
       return node.listener;
     }
     node = node.next;
@@ -29,12 +25,12 @@ function setAttributeListener(eventTarget, type, listener) {
   }
 
   var prev = null;
-  var node = eventTarget[LISTENERS][type];
+  var node = eventTarget[_LISTENERS$ATTRIBUTE$newNode.LISTENERS][type];
   while (node != null) {
-    if (node.kind === ATTRIBUTE) {
+    if (node.kind === _LISTENERS$ATTRIBUTE$newNode.ATTRIBUTE) {
       // Remove old value.
       if (prev == null) {
-        eventTarget[LISTENERS][type] = node.next;
+        eventTarget[_LISTENERS$ATTRIBUTE$newNode.LISTENERS][type] = node.next;
       } else {
         prev.next = node.next;
       }
@@ -48,9 +44,9 @@ function setAttributeListener(eventTarget, type, listener) {
   // Add new value.
   if (listener != null) {
     if (prev == null) {
-      eventTarget[LISTENERS][type] = newNode(listener, ATTRIBUTE);
+      eventTarget[_LISTENERS$ATTRIBUTE$newNode.LISTENERS][type] = _LISTENERS$ATTRIBUTE$newNode.newNode(listener, _LISTENERS$ATTRIBUTE$newNode.ATTRIBUTE);
     } else {
-      prev.next = newNode(listener, ATTRIBUTE);
+      prev.next = _LISTENERS$ATTRIBUTE$newNode.newNode(listener, _LISTENERS$ATTRIBUTE$newNode.ATTRIBUTE);
     }
   }
 }
@@ -88,21 +84,16 @@ function defineCustomEventTarget(EventTargetBase, types) {
 },{"./commons":4}],2:[function(require,module,exports){
 "use strict";
 
-module.exports = EventTarget;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = EventTarget;
 
-var _commons = require("./commons");
+var _LISTENERS$CAPTURE$BUBBLE$newNode = require("./commons");
 
-var LISTENERS = _commons.LISTENERS;
-var CAPTURE = _commons.CAPTURE;
-var BUBBLE = _commons.BUBBLE;
-var newNode = _commons.newNode;
+var _defineCustomEventTarget = require("./CustomEventTarget");
 
-var defineCustomEventTarget = require("./CustomEventTarget").defineCustomEventTarget;
-
-var _EventWrapper = require("./EventWrapper");
-
-var createEventWrapper = _EventWrapper.createEventWrapper;
-var STOP_IMMEDIATE_PROPAGATION_FLAG = _EventWrapper.STOP_IMMEDIATE_PROPAGATION_FLAG;
+var _createEventWrapper$STOP_IMMEDIATE_PROPAGATION_FLAG = require("./EventWrapper");
 
 var HAS_EVENTTARGET_INTERFACE = typeof window !== "undefined" && typeof window.EventTarget !== "undefined";
 
@@ -121,14 +112,14 @@ function EventTarget() {
     //   let kind: CAPTURE|BUBBLE|ATTRIBUTE
     //   let next: ListenerNode|null
     // }
-    Object.defineProperty(this, LISTENERS, { value: Object.create(null) });
+    Object.defineProperty(this, _LISTENERS$CAPTURE$BUBBLE$newNode.LISTENERS, { value: Object.create(null) });
   } else if (types.length > 0) {
     // To use to extend with attribute listener properties.
     // e.g.
     //     class MyCustomObject extends EventTarget("message", "error") {
     //       //...
     //     }
-    return defineCustomEventTarget(EventTarget, types);
+    return _defineCustomEventTarget.defineCustomEventTarget(EventTarget, types);
   } else {
     throw new TypeError("Cannot call a class as a function");
   }
@@ -152,10 +143,10 @@ EventTarget.prototype = Object.create((HAS_EVENTTARGET_INTERFACE ? window.EventT
         throw new TypeError("listener should be a function.");
       }
 
-      var kind = capture ? CAPTURE : BUBBLE;
-      var node = this[LISTENERS][type];
+      var kind = capture ? _LISTENERS$CAPTURE$BUBBLE$newNode.CAPTURE : _LISTENERS$CAPTURE$BUBBLE$newNode.BUBBLE;
+      var node = this[_LISTENERS$CAPTURE$BUBBLE$newNode.LISTENERS][type];
       if (node == null) {
-        this[LISTENERS][type] = newNode(listener, kind);
+        this[_LISTENERS$CAPTURE$BUBBLE$newNode.LISTENERS][type] = _LISTENERS$CAPTURE$BUBBLE$newNode.newNode(listener, kind);
         return true;
       }
 
@@ -169,7 +160,7 @@ EventTarget.prototype = Object.create((HAS_EVENTTARGET_INTERFACE ? window.EventT
         node = node.next;
       }
 
-      prev.next = newNode(listener, kind);
+      prev.next = _LISTENERS$CAPTURE$BUBBLE$newNode.newNode(listener, kind);
       return true;
     },
     configurable: true,
@@ -184,13 +175,13 @@ EventTarget.prototype = Object.create((HAS_EVENTTARGET_INTERFACE ? window.EventT
         return false;
       }
 
-      var kind = capture ? CAPTURE : BUBBLE;
+      var kind = capture ? _LISTENERS$CAPTURE$BUBBLE$newNode.CAPTURE : _LISTENERS$CAPTURE$BUBBLE$newNode.BUBBLE;
       var prev = null;
-      var node = this[LISTENERS][type];
+      var node = this[_LISTENERS$CAPTURE$BUBBLE$newNode.LISTENERS][type];
       while (node != null) {
         if (node.listener === listener && node.kind === kind) {
           if (prev == null) {
-            this[LISTENERS][type] = node.next;
+            this[_LISTENERS$CAPTURE$BUBBLE$newNode.LISTENERS][type] = node.next;
           } else {
             prev.next = node.next;
           }
@@ -210,19 +201,19 @@ EventTarget.prototype = Object.create((HAS_EVENTTARGET_INTERFACE ? window.EventT
   dispatchEvent: {
     value: function dispatchEvent(event) {
       // If listeners aren't registered, terminate.
-      var node = this[LISTENERS][event.type];
+      var node = this[_LISTENERS$CAPTURE$BUBBLE$newNode.LISTENERS][event.type];
       if (node == null) {
         return true;
       }
 
       // Since we cannot rewrite several properties, so wrap object.
-      event = createEventWrapper(event, this);
+      event = _createEventWrapper$STOP_IMMEDIATE_PROPAGATION_FLAG.createEventWrapper(event, this);
 
       // This doesn't process capturing phase and bubbling phase.
       // This isn't participating in a tree.
       while (node != null) {
         node.listener.call(this, event);
-        if (event[STOP_IMMEDIATE_PROPAGATION_FLAG]) {
+        if (event[_createEventWrapper$STOP_IMMEDIATE_PROPAGATION_FLAG.STOP_IMMEDIATE_PROPAGATION_FLAG]) {
           break;
         }
         node = node.next;
@@ -234,23 +225,22 @@ EventTarget.prototype = Object.create((HAS_EVENTTARGET_INTERFACE ? window.EventT
     writable: true
   }
 });
+module.exports = exports["default"];
 },{"./CustomEventTarget":1,"./EventWrapper":3,"./commons":4}],3:[function(require,module,exports){
 "use strict";
 
-var _defineProperty = function (obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); };
-
-exports.createEventWrapper = createEventWrapper;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.createEventWrapper = createEventWrapper;
 
-var symbol = require("./commons").symbol;
+var _symbol = require("./commons");
 
-var STOP_IMMEDIATE_PROPAGATION_FLAG = symbol("stop_immediate_propagation_flag");
+var STOP_IMMEDIATE_PROPAGATION_FLAG = _symbol.symbol("stop_immediate_propagation_flag");
 
 exports.STOP_IMMEDIATE_PROPAGATION_FLAG = STOP_IMMEDIATE_PROPAGATION_FLAG;
-var CANCELED_FLAG = symbol("canceled_flag");
-var ORIGINAL_EVENT = symbol("original_event");
+var CANCELED_FLAG = _symbol.symbol("canceled_flag");
+var ORIGINAL_EVENT = _symbol.symbol("original_event");
 
 var wrapperPrototypeDefinition = {
   stopPropagation: {
@@ -304,36 +294,31 @@ var wrapperPrototypeDefinition = {
 function createEventWrapper(event, eventTarget) {
   var timeStamp = typeof event.timeStamp === "number" ? event.timeStamp : Date.now();
 
-  return Object.create(Object.create(event, wrapperPrototypeDefinition), (function () {
-    var _Object$create = {
-      type: { value: event.type, enumerable: true },
-      target: { value: eventTarget, enumerable: true },
-      currentTarget: { value: eventTarget, enumerable: true },
-      eventPhase: { value: 2, enumerable: true },
-      bubbles: { value: Boolean(event.bubbles), enumerable: true },
-      cancelable: { value: Boolean(event.cancelable), enumerable: true },
-      timeStamp: { value: timeStamp, enumerable: true },
-      isTrusted: { value: false, enumerable: true } };
+  var retv = Object.create(Object.create(event, wrapperPrototypeDefinition), {
+    type: { value: event.type, enumerable: true },
+    target: { value: eventTarget, enumerable: true },
+    currentTarget: { value: eventTarget, enumerable: true },
+    eventPhase: { value: 2, enumerable: true },
+    bubbles: { value: Boolean(event.bubbles), enumerable: true },
+    cancelable: { value: Boolean(event.cancelable), enumerable: true },
+    timeStamp: { value: timeStamp, enumerable: true },
+    isTrusted: { value: false, enumerable: true }
+  });
+  Object.defineProperty(retv, STOP_IMMEDIATE_PROPAGATION_FLAG, { value: false, writable: true });
+  Object.defineProperty(retv, CANCELED_FLAG, { value: false, writable: true });
+  Object.defineProperty(retv, ORIGINAL_EVENT, { value: event });
 
-    _defineProperty(_Object$create, STOP_IMMEDIATE_PROPAGATION_FLAG, { value: false, writable: true });
-
-    _defineProperty(_Object$create, CANCELED_FLAG, { value: false, writable: true });
-
-    _defineProperty(_Object$create, ORIGINAL_EVENT, { value: event });
-
-    return _Object$create;
-  })());
+  return retv;
 }
 },{"./commons":4}],4:[function(require,module,exports){
-
-
-// Create a LinkedList structure for EventListener.
 "use strict";
 
-exports.newNode = newNode;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+// Create a LinkedList structure for EventListener.
+exports.newNode = newNode;
 var symbol = typeof Symbol !== "undefined" ? Symbol : function Symbol(name) {
   return "[[" + name + "_" + Math.random().toFixed(8).slice(2) + "]]";
 };
