@@ -1,6 +1,6 @@
 {
   "name": "event-target-shim",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A polyfill for W3C EventTarget Constructor.",
   "main": "lib/EventTarget.js",
   "files": [
