@@ -9,6 +9,16 @@ const HAS_EVENT_TARGET_INTERFACE =
   (typeof window !== "undefined" && typeof window.EventTarget !== "undefined");
 const IS_CHROME =
   (typeof navigator !== "undefined" && /Chrome/.test(navigator.userAgent));
+const IS_CUSTOM_EVENT_CONSTRUCTOR_SUPPORTED = (function() {
+    try {
+        new CustomEvent("test", {bubbles: false, cancelable: false, detail: "test"}); //eslint-disable-line no-new
+        return true;
+    }
+    catch (err) {
+        return false;
+    }
+})();
+
 
 // A helper to create an event.
 function createEvent(type, bubbles = false, cancelable = false, detail = null) {
@@ -180,6 +190,16 @@ describe("EventTarget:", () => {
     assert(lastEvent.detail === "detail");
   });
 
+  // IE is not supported.
+  (IS_CUSTOM_EVENT_CONSTRUCTOR_SUPPORTED ? it : xit)("should work with CustomEvent", () => {
+    let lastEvent = null;
+    let event = new CustomEvent("test", {detail: 123});
+    target.addEventListener("test", e => { lastEvent = e; });
+    target.dispatchEvent(event);
+
+    assert(lastEvent != null);
+    assert(lastEvent.detail === event.detail);
+  });
 });
 
 describe("EventTarget with attribute listeners:", () => {
