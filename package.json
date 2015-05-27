@@ -10,19 +10,15 @@
   "scripts": {
     "clean": "rimraf lib dist",
     "lint": "eslint src",
-    "build": "npm-run-all clean lint build:lib build:dist build:dist-min",
+    "build": "npm-run-all clean lint build:*",
     "build:lib": "babel src --out-dir lib",
     "build:dist": "mkdirp dist && browserify lib/EventTarget.js --standalone event-target-shim > dist/event-target-shim.js",
     "build:dist-min": "uglifyjs dist/event-target-shim.js --compress --mangle > dist/event-target-shim.min.js",
-    "test": "npm-run-all clean lint build:lib test:karma",
-    "test:karma": "karma start karma.conf.js --single-run",
-    "testing": "npm-run-all clean --parallel testing:build testing:karma",
-    "testing:build": "npm run build:lib -- --watch",
-    "testing:karma": "karma start karma.conf.js --auto-watch --reporters growl,progress"
+    "test": "npm run lint && karma start karma.conf.js --single-run",
+    "testing": "karma start karma.conf.js --auto-watch --reporters growl,progress"
   },
   "devDependencies": {
     "babel": "^5.4.7",
-    "babel-core": "^5.4.7",
     "babel-plugin-espower": "^1.0.0",
     "babelify": "^6.1.2",
     "browserify": "^10.2.1",

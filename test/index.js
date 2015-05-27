@@ -2,7 +2,7 @@ import assert from "power-assert";
 import spy from "spy";
 
 // Test Target.
-import EventTarget from "../lib/EventTarget";
+import EventTarget from "../src/EventTarget";
 
 
 const HAS_EVENT_TARGET_INTERFACE =
