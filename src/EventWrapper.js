@@ -58,18 +58,23 @@ export function createEventWrapper(event, eventTarget) {
       ? event.timeStamp
       : Date.now());
 
+    let props = {
+      type: {value: event.type, enumerable: true},
+      target: {value: eventTarget, enumerable: true},
+      currentTarget: {value: eventTarget, enumerable: true},
+      eventPhase: {value: 2, enumerable: true},
+      bubbles: {value: Boolean(event.bubbles), enumerable: true},
+      cancelable: {value: Boolean(event.cancelable), enumerable: true},
+      timeStamp: {value: timeStamp, enumerable: true},
+      isTrusted: {value: false, enumerable: true}
+    };
+    if (typeof event.detail !== "undefined") {
+      props.detail = {value: event.detail, enumerable: true };
+    }
+
     let retv = Object.create(
       Object.create(event, wrapperPrototypeDefinition),
-      {
-        type: {value: event.type, enumerable: true},
-        target: {value: eventTarget, enumerable: true},
-        currentTarget: {value: eventTarget, enumerable: true},
-        eventPhase: {value: 2, enumerable: true},
-        bubbles: {value: Boolean(event.bubbles), enumerable: true},
-        cancelable: {value: Boolean(event.cancelable), enumerable: true},
-        timeStamp: {value: timeStamp, enumerable: true},
-        isTrusted: {value: false, enumerable: true}
-      }
+      props
     );
     Object.defineProperty(
       retv, STOP_IMMEDIATE_PROPAGATION_FLAG, {value: false, writable: true});
