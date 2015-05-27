@@ -69,7 +69,7 @@ export function createEventWrapper(event, eventTarget) {
       isTrusted: {value: false, enumerable: true}
     };
     if (typeof event.detail !== "undefined") {
-      props.detail = event.detail;
+      props.detail = {value: event.detail, enumerable: true };
     }
 
     let retv = Object.create(
