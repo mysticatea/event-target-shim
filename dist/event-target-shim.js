@@ -81,7 +81,122 @@ function defineCustomEventTarget(EventTargetBase, types) {
 
   return EventTarget;
 }
-},{"./commons":4}],2:[function(require,module,exports){
+},{"./commons":3}],2:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.createEventWrapper = createEventWrapper;
+
+var _commons = require("./commons");
+
+var STOP_IMMEDIATE_PROPAGATION_FLAG = (0, _commons.symbol)("stop_immediate_propagation_flag");
+
+exports.STOP_IMMEDIATE_PROPAGATION_FLAG = STOP_IMMEDIATE_PROPAGATION_FLAG;
+var CANCELED_FLAG = (0, _commons.symbol)("canceled_flag");
+var ORIGINAL_EVENT = (0, _commons.symbol)("original_event");
+
+var wrapperPrototypeDefinition = {
+  stopPropagation: {
+    value: function stopPropagation() {
+      var e = this[ORIGINAL_EVENT];
+      if (typeof e.stopPropagation === "function") {
+        e.stopPropagation();
+      }
+    },
+    writable: true,
+    configurable: true
+  },
+
+  stopImmediatePropagation: {
+    value: function stopImmediatePropagation() {
+      this[STOP_IMMEDIATE_PROPAGATION_FLAG] = true;
+
+      var e = this[ORIGINAL_EVENT];
+      if (typeof e.stopImmediatePropagation === "function") {
+        e.stopImmediatePropagation();
+      }
+    },
+    writable: true,
+    configurable: true
+  },
+
+  preventDefault: {
+    value: function preventDefault() {
+      if (this.cancelable === true) {
+        this[CANCELED_FLAG] = true;
+      }
+
+      var e = this[ORIGINAL_EVENT];
+      if (typeof e.preventDefault === "function") {
+        e.preventDefault();
+      }
+    },
+    writable: true,
+    configurable: true
+  },
+
+  defaultPrevented: {
+    get: function get() {
+      return this[CANCELED_FLAG];
+    },
+    enumerable: true,
+    configurable: true
+  }
+};
+
+function createEventWrapper(event, eventTarget) {
+  var timeStamp = typeof event.timeStamp === "number" ? event.timeStamp : Date.now();
+
+  var props = {
+    type: { value: event.type, enumerable: true },
+    target: { value: eventTarget, enumerable: true },
+    currentTarget: { value: eventTarget, enumerable: true },
+    eventPhase: { value: 2, enumerable: true },
+    bubbles: { value: Boolean(event.bubbles), enumerable: true },
+    cancelable: { value: Boolean(event.cancelable), enumerable: true },
+    timeStamp: { value: timeStamp, enumerable: true },
+    isTrusted: { value: false, enumerable: true }
+  };
+  if (typeof event.detail !== "undefined") {
+    props.detail = { value: event.detail, enumerable: true };
+  }
+
+  var retv = Object.create(Object.create(event, wrapperPrototypeDefinition), props);
+  Object.defineProperty(retv, STOP_IMMEDIATE_PROPAGATION_FLAG, { value: false, writable: true });
+  Object.defineProperty(retv, CANCELED_FLAG, { value: false, writable: true });
+  Object.defineProperty(retv, ORIGINAL_EVENT, { value: event });
+
+  return retv;
+}
+},{"./commons":3}],3:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.newNode = newNode;
+var symbol = typeof Symbol !== "undefined" ? Symbol : function Symbol(name) {
+  return "[[" + name + "_" + Math.random().toFixed(8).slice(2) + "]]";
+};
+
+exports.symbol = symbol;
+var LISTENERS = symbol("listeners");
+exports.LISTENERS = LISTENERS;
+var CAPTURE = 1;
+exports.CAPTURE = CAPTURE;
+var BUBBLE = 2;
+exports.BUBBLE = BUBBLE;
+var ATTRIBUTE = 3;
+
+exports.ATTRIBUTE = ATTRIBUTE;
+// Create a LinkedList structure for EventListener.
+
+function newNode(listener, kind) {
+  return { listener: listener, kind: kind, next: null };
+}
+},{}],4:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -226,120 +341,5 @@ EventTarget.prototype = Object.create((HAS_EVENTTARGET_INTERFACE ? window.EventT
   }
 });
 module.exports = exports["default"];
-},{"./CustomEventTarget":1,"./EventWrapper":3,"./commons":4}],3:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.createEventWrapper = createEventWrapper;
-
-var _commons = require("./commons");
-
-var STOP_IMMEDIATE_PROPAGATION_FLAG = (0, _commons.symbol)("stop_immediate_propagation_flag");
-
-exports.STOP_IMMEDIATE_PROPAGATION_FLAG = STOP_IMMEDIATE_PROPAGATION_FLAG;
-var CANCELED_FLAG = (0, _commons.symbol)("canceled_flag");
-var ORIGINAL_EVENT = (0, _commons.symbol)("original_event");
-
-var wrapperPrototypeDefinition = {
-  stopPropagation: {
-    value: function stopPropagation() {
-      var e = this[ORIGINAL_EVENT];
-      if (typeof e.stopPropagation === "function") {
-        e.stopPropagation();
-      }
-    },
-    writable: true,
-    configurable: true
-  },
-
-  stopImmediatePropagation: {
-    value: function stopImmediatePropagation() {
-      this[STOP_IMMEDIATE_PROPAGATION_FLAG] = true;
-
-      var e = this[ORIGINAL_EVENT];
-      if (typeof e.stopImmediatePropagation === "function") {
-        e.stopImmediatePropagation();
-      }
-    },
-    writable: true,
-    configurable: true
-  },
-
-  preventDefault: {
-    value: function preventDefault() {
-      if (this.cancelable === true) {
-        this[CANCELED_FLAG] = true;
-      }
-
-      var e = this[ORIGINAL_EVENT];
-      if (typeof e.preventDefault === "function") {
-        e.preventDefault();
-      }
-    },
-    writable: true,
-    configurable: true
-  },
-
-  defaultPrevented: {
-    get: function get() {
-      return this[CANCELED_FLAG];
-    },
-    enumerable: true,
-    configurable: true
-  }
-};
-
-function createEventWrapper(event, eventTarget) {
-  var timeStamp = typeof event.timeStamp === "number" ? event.timeStamp : Date.now();
-
-  var props = {
-    type: { value: event.type, enumerable: true },
-    target: { value: eventTarget, enumerable: true },
-    currentTarget: { value: eventTarget, enumerable: true },
-    eventPhase: { value: 2, enumerable: true },
-    bubbles: { value: Boolean(event.bubbles), enumerable: true },
-    cancelable: { value: Boolean(event.cancelable), enumerable: true },
-    timeStamp: { value: timeStamp, enumerable: true },
-    isTrusted: { value: false, enumerable: true }
-  };
-  if (typeof event.detail !== "undefined") {
-    props.detail = { value: event.detail, enumerable: true };
-  }
-
-  var retv = Object.create(Object.create(event, wrapperPrototypeDefinition), props);
-  Object.defineProperty(retv, STOP_IMMEDIATE_PROPAGATION_FLAG, { value: false, writable: true });
-  Object.defineProperty(retv, CANCELED_FLAG, { value: false, writable: true });
-  Object.defineProperty(retv, ORIGINAL_EVENT, { value: event });
-
-  return retv;
-}
-},{"./commons":4}],4:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.newNode = newNode;
-var symbol = typeof Symbol !== "undefined" ? Symbol : function Symbol(name) {
-  return "[[" + name + "_" + Math.random().toFixed(8).slice(2) + "]]";
-};
-
-exports.symbol = symbol;
-var LISTENERS = symbol("listeners");
-exports.LISTENERS = LISTENERS;
-var CAPTURE = 1;
-exports.CAPTURE = CAPTURE;
-var BUBBLE = 2;
-exports.BUBBLE = BUBBLE;
-var ATTRIBUTE = 3;
-
-exports.ATTRIBUTE = ATTRIBUTE;
-// Create a LinkedList structure for EventListener.
-
-function newNode(listener, kind) {
-  return { listener: listener, kind: kind, next: null };
-}
-},{}]},{},[2])(2)
+},{"./CustomEventTarget":1,"./EventWrapper":2,"./commons":3}]},{},[4])(4)
 });
