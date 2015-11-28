@@ -1,31 +1,20 @@
 {
-  "env": {
-    "browser": true,
-    "es6": true
-  },
-  "rules": {
-    "no-var": 2
-  },
-  "ecmaFeatures": {
-    "arrowFunctions": true,
-    "binaryLiterals": true,
-    "blockBindings": true,
-    "classes": true,
-    "defaultParams": true,
-    "destructuring": true,
-    "forOf": true,
-    "generators": true,
-    "modules": true,
-    "objectLiteralComputedProperties": true,
-    "objectLiteralDuplicateProperties": true,
-    "objectLiteralShorthandMethods": true,
-    "objectLiteralShorthandProperties": true,
-    "octalLiterals": true,
-    "regexUFlag": true,
-    "regexYFlag": true,
-    "superInFunctions": true,
-    "templateStrings": true,
-    "unicodeCodePointEscapes": true,
-    "globalReturn": true
-  }
+    "extends": "mysticatea/es5",
+    "plugins": [
+        "node"
+    ],
+    "env": {
+        "node": true
+    },
+    "globals": {
+        "document": false,
+        "navigator": false,
+        "window": false,
+        "CustomEvent": false
+    },
+    "rules": {
+        "no-param-reassign": [2, {"props": false}],
+        "node/no-missing-require": 2,
+        "node/shebang": 2
+    }
 }
