@@ -112,6 +112,8 @@ describe("EventTarget:", function() {
         assert(lastEvent.isTrusted === false);
         assert(lastEvent.timeStamp === event.timeStamp);
         assert(lastEvent.detail === "detail");
+        assert(target.removeEventListener("test", listener2));
+        assert(target.removeEventListener("test", listener));
     });
 
     it("should not call removed listeners.", function() {
@@ -132,6 +134,8 @@ describe("EventTarget:", function() {
         target.dispatchEvent(event);
 
         assert(listener.callCount === 1);
+        assert(target.removeEventListener("test", listener));
+        assert(target.removeEventListener("test", listener) === false);
     });
 
     it("should allow duplicate in listeners if those capture flag are different.", function() {
@@ -142,6 +146,8 @@ describe("EventTarget:", function() {
         target.dispatchEvent(event);
 
         assert(listener.callCount === 2);
+        assert(target.removeEventListener("test", listener, false));
+        assert(target.removeEventListener("test", listener, true));
     });
 
     it("should not call registered listeners if its type is different.", function() {
@@ -236,6 +242,25 @@ describe("EventTarget:", function() {
         assert(lastEvent != null);
         assert(lastEvent.detail === event.detail);
     });
+
+    it("cannot call a class as a function", function() {
+        assert.throws(
+            function() { EventTarget(); },
+            "Cannot call a class as a function"
+        );
+    });
+
+    it("should allow the listener is omitted", function() {
+        target.addEventListener("test");
+        target.removeEventListener("test");
+    });
+
+    it("should throw a TypeError if the listener is not a function", function() {
+        assert.throws(
+            function() { target.addEventListener("test", "listener"); },
+            TypeError
+        );
+    });
 });
 
 describe("EventTarget with attribute listeners:", function() {
@@ -293,7 +318,7 @@ describe("EventTarget with attribute listeners:", function() {
         assert(listener.called === false);
     });
 
-    it("it should not allow duplicate in listeners.", function() {
+    it("should not allow duplicate in listeners.", function() {
         var listener = spy();
         var event = createEvent("test");
         target.ontest = listener;
@@ -302,5 +327,28 @@ describe("EventTarget with attribute listeners:", function() {
 
         assert(target.ontest === listener);
         assert(listener.callCount === 1);
+    });
+
+    it("should allow duplicate in listeners if these kind is different.", function() {
+        var listener = spy();
+        var event = createEvent("test");
+        target.addEventListener("test", listener, false);
+        target.ontest = listener;
+        target.addEventListener("test", listener, true);
+        target.dispatchEvent(event);
+
+        assert(target.ontest === listener);
+        assert(listener.callCount === 3);
+
+        // for coverage.
+        target.ontest = null;
+        assert(target.ontest === null);
+    });
+
+    it("should throw a TypeError if the listener is not a function", function() {
+        assert.throws(
+            function() { target.ontest = "listener"; },
+            TypeError
+        );
     });
 });
