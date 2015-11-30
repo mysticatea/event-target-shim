@@ -1,7 +1,7 @@
 {
   "name": "event-target-shim",
   "version": "1.0.5",
-  "description": "A polyfill for W3C EventTarget Constructor.",
+  "description": "An implementation of W3C EventTarget interface.",
   "main": "lib/event-target.js",
   "files": [
     "dist",
@@ -16,6 +16,7 @@
     "build:dist": "mkdirp dist && browserify lib/event-target.js --standalone event-target-shim > dist/event-target-shim.js",
     "build:dist-min": "uglifyjs dist/event-target-shim.js --compress --mangle > dist/event-target-shim.min.js",
     "test": "npm-run-all clean lint && karma start karma.conf.js --single-run",
+    "watch": "karma start karma.conf.js --watch",
     "travis": "istanbul cover node_modules/mocha/bin/_mocha --report lcovonly -- test/**/*.js --require scripts/power-assert",
     "coveralls": "cat ./coverage/lcov.info | coveralls"
   },
@@ -55,8 +56,7 @@
     "eventtarget",
     "event",
     "events",
-    "shim",
-    "polyfill"
+    "shim"
   ],
   "author": "Toru Nagashima",
   "license": "MIT",

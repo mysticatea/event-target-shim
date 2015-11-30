@@ -80,6 +80,13 @@ var ATTRIBUTE = 3;
 // Helpers
 //-----------------------------------------------------------------------------
 
+/**
+ * Gets a specified attribute listener from a given EventTarget object.
+ *
+ * @param {EventTarget} eventTarget - An EventTarget object to get.
+ * @param {string} type - An event type to get.
+ * @returns {function|null} The found attribute listener.
+ */
 function getAttributeListener(eventTarget, type) {
     var node = eventTarget[LISTENERS][type];
     while (node != null) {
@@ -91,6 +98,14 @@ function getAttributeListener(eventTarget, type) {
     return null;
 }
 
+/**
+ * Sets a specified attribute listener to a given EventTarget object.
+ *
+ * @param {EventTarget} eventTarget - An EventTarget object to set.
+ * @param {string} type - An event type to set.
+ * @param {function|null} listener - A listener to be set.
+ * @returns {void}
+ */
 function setAttributeListener(eventTarget, type, listener) {
     if (listener != null && typeof listener !== "function") {
         throw new TypeError("listener should be a function.");
@@ -130,6 +145,13 @@ function setAttributeListener(eventTarget, type, listener) {
 // Public Interface
 //-----------------------------------------------------------------------------
 
+/**
+ * Defines an `EventTarget` implementation which has `onfoobar` attributes.
+ *
+ * @param {EventTarget} EventTargetBase - A base implementation of EventTarget.
+ * @param {string[]} types - A list of event types which are defined as attribute listeners.
+ * @returns {EventTarget} The defined `EventTarget` implementation which has attribute listeners.
+ */
 exports.defineCustomEventTarget = function(EventTargetBase, types) {
     function EventTarget() {
         EventTargetBase.call(this);
@@ -214,7 +236,12 @@ var BUBBLE = 2;
 // Public Interface
 //-----------------------------------------------------------------------------
 
-
+/**
+ * An implementation for `EventTarget` interface.
+ *
+ * @constructor
+ * @public
+ */
 var EventTarget = module.exports = function EventTarget() {
     if (this instanceof EventTarget) {
         // this[LISTENERS] is a Map.

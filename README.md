@@ -7,34 +7,10 @@
 [![npm version](https://img.shields.io/npm/v/event-target-shim.svg)](https://www.npmjs.com/package/event-target-shim)
 [![Downloads/month](https://img.shields.io/npm/dm/event-target-shim.svg)](https://www.npmjs.com/package/event-target-shim)
 
-A polyfill for W3C EventTarget, plus few extensions.
+An implementation of [W3C EventTarget interface](http://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113/events.html#Events-EventTarget), plus few extensions.
 
-See Also: https://dom.spec.whatwg.org/#interface-eventtarget
-
-
-## Overview
-
-- This module provides `EventTarget` constructor that is possible to inherit for
-  your custom object.
-- This module provides an utility in order to define properties for attribute
-  listeners (e.g. `obj.onclick`).
-
-If `window.EventTarget` exists, `EventTarget` is inherit from
-`window.EventTarget`.
-In short, `obj instanceof window.EventTarget === true`.
-
-```ts
-declare class EventTarget {
-  constructor();
-  addEventListener(type: string, listener: (event: Event) => void, capture?: boolean): void;
-  removeEventListener(type: string, listener: (event: Event) => void, capture?: boolean): void;
-  dispatchEvent(event: Event): void;
-}
-
-// Define EventTarget type with attribute listeners.
-declare function EventTarget(...types: string[]): typeof EventTarget;
-```
-
+- This provides `EventTarget` constructor that can inherit for your custom object.
+- This provides an utility that defines properties of attribute listeners (e.g. `obj.onclick`).
 
 ## Installation
 
@@ -42,43 +18,97 @@ declare function EventTarget(...types: string[]): typeof EventTarget;
 npm install event-target-shim
 ```
 
-
 ## Usage
 
-```js
-import EventTarget from "event-target-shim";
+### Basic
 
-class YourCoolType extends EventTarget {
-  // ...
+```js
+// import.
+const EventTarget = require("event-target-shim");
+
+// define a custom type.
+class Foo extends EventTarget {
 }
 
-// This prototype has getters/setters of `onmessage` and `onerror`.
-class YourAwesomeType extends EventTarget("message", "error") {
-  // ...
+// add event listeners.
+let foo = new Foo();
+foo.addEventListener("foo", event => {
+    console.log(event.hello);
+});
+foo.addEventListener("foo", event => {
+    if (event.hello !== "hello") {
+        // event implements Event interface.
+        event.preventDefault();
+    }
+});
+
+// dispatch an event.
+let event = document.createEvent("CustomEvent");
+event.initCustomEvent("foo", /*bubbles*/ false, /*cancelable*/ false, /*detail*/ null);
+event.hello = "hello";
+foo.dispatchEvent(event);
+
+// dispatch an event simply (non standard).
+foo.dispatchEvent({type: "foo", hello: "hello"});
+
+// dispatch a cancelable event.
+if (!foo.dispatchEvent({type: "foo", cancelable: true, hello: "hey"})) {
+    console.log("defaultPrevented");
 }
 ```
 
-I prefer use together with [Browserify](http://browserify.org).
-
-But we can use together with [RequireJS](http://requirejs.org/), instead.
-In this case, please download a file from dist directory of repo.
+### The Extension for Attribute Listeners
 
 ```js
-define("MagicalBox", ["event-target-shim"], function (EventTarget) {
-  function MagicalBox() {
-    EventTarget.call(this);
-  }
+// import.
+const EventTarget = require("event-target-shim");
 
-  MagicalBox.prototype = Object.create(EventTarget.prototype, {
-    constructor: {
-      value: MagicalBox,
-      configurable: true,
-      writable: true
-    },
+// define a custom type.
+class Foo extends EventTarget("message", "error") {
+}
 
-    // ...
-  });
-
-  return MagicalBox;
+// add event listeners.
+let foo = new Foo();
+foo.onmessage = event => {
+    console.log(event.data);
+};
+foo.onerror = event => {
+    console.log(event.message);
+};
+foo.addEventListener("message", event => {
+    console.log(event.data);
 });
+
+// dispatch a event simply (non standard).
+foo.dispatchEvent({type: "message", data: "hello"});
+foo.dispatchEvent({type: "error", message: "an error"});
+```
+
+## API
+
+```ts
+declare class EventTarget {
+    constructor();
+    addEventListener(type: string, listener?: (event: Event) => void, capture: boolean = false): void;
+    removeEventListener(type: string, listener?: (event: Event) => void, capture: boolean = false): void;
+    dispatchEvent(event: Event | {type: string, babbles?: boolean, cancelable?: boolean}): void;
+}
+
+// Define EventTarget type with attribute listeners.
+declare function EventTarget(...types: string[]): EventTarget;
+```
+
+If `window.EventTarget` exists, `EventTarget` is inherit from `window.EventTarget`.
+So,
+
+```js
+const EventTarget = require("event-target-shim");
+
+class Foo extends EventTarget {
+}
+
+let foo = new Foo();
+if (foo instanceof window.EventTarget) {
+    console.log("yay!");
+}
 ```
