@@ -66,7 +66,16 @@ function createEvent(type, bubbles, cancelable, detail) {
 
 describe("EventTarget:", function() {
     // Use extended class to test.
-    var TestTarget = EventTarget;
+    function TestTarget() {
+        EventTarget.call(this);
+    }
+    TestTarget.prototype = Object.create(EventTarget.prototype, {
+        constructor: {
+            value: TestTarget,
+            configurable: true,
+            writable: true
+        }
+    });
 
     // A test target.
     var target = null;
@@ -265,7 +274,16 @@ describe("EventTarget:", function() {
 
 describe("EventTarget with attribute listeners:", function() {
     // Use extended class to test.
-    var TestTarget = EventTarget("test");
+    function TestTarget() {
+        EventTarget.call(this);
+    }
+    TestTarget.prototype = Object.create(EventTarget("test").prototype, {
+        constructor: {
+            value: TestTarget,
+            configurable: true,
+            writable: true
+        }
+    });
 
     // A test target.
     var target = null;
@@ -281,6 +299,14 @@ describe("EventTarget with attribute listeners:", function() {
     //
     // var's test!
     //
+
+    (HAS_EVENT_TARGET_INTERFACE ? it : xit)("should be instanceof `window.EventTarget`.", function() {
+        assert(target instanceof window.EventTarget);
+    });
+
+    (HAS_EVENT_TARGET_INTERFACE ? it : xit)("should not equal `EventTarget` and `window.EventTarget`.", function() {
+        assert(EventTarget !== window.EventTarget);
+    });
 
     it("should properties of attribute listener are null by default.", function() {
         assert(target.ontest === null);
@@ -345,7 +371,7 @@ describe("EventTarget with attribute listeners:", function() {
         assert(target.ontest === null);
     });
 
-    it("should throw a TypeError if the listener is not a function", function() {
+    it("should throw a TypeError if the listener is not a function.", function() {
         assert.throws(
             function() { target.ontest = "listener"; },
             TypeError
