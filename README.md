@@ -76,6 +76,9 @@ const EventTarget = require("event-target-shim");
 // define a custom type with attribute listeners.
 class Foo extends EventTarget("message", "error") {
 }
+// or non-variadic
+class Foo extends EventTarget(["message", "error"]) {
+}
 
 //-----------------------------------------------------------------------------
 // add event listeners.
@@ -124,6 +127,8 @@ foo.dispatchEvent({type: "error", message: "an error"});
   }
 
   Foo.prototype = Object.create(EventTarget("message", "error").prototype, {
+  // or
+  // Foo.prototype = Object.create(EventTarget(["message", "error"]).prototype, {
       constructor: {
           value: Foo,
           configurable: true,
