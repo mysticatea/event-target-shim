@@ -378,3 +378,111 @@ describe("EventTarget with attribute listeners:", function() {
         );
     });
 });
+
+describe("EventTarget with an array of attribute listeners:", function() {
+    // Use extended class to test.
+    function TestTarget() {
+        EventTarget.call(this);
+    }
+    var events = ["test", "hello"];
+    TestTarget.prototype = Object.create(EventTarget(events).prototype, {
+        constructor: {
+            value: TestTarget,
+            configurable: true,
+            writable: true
+        }
+    });
+
+    // A test target.
+    var target = null;
+
+    // Initialize a test target.
+    beforeEach(function() {
+        target = new TestTarget();
+    });
+    afterEach(function() {
+        target = null;
+    });
+
+    //
+    // var's test!
+    //
+
+    (HAS_EVENT_TARGET_INTERFACE ? it : xit)("should be instanceof `window.EventTarget`.", function() {
+        assert(target instanceof window.EventTarget);
+    });
+
+    (HAS_EVENT_TARGET_INTERFACE ? it : xit)("should not equal `EventTarget` and `window.EventTarget`.", function() {
+        assert(EventTarget !== window.EventTarget);
+    });
+
+    it("should properties of attribute listener are null by default.", function() {
+        assert(target.ontest === null);
+    });
+
+    // V8 has a bug.
+    // See Also: https://code.google.com/p/v8/issues/detail?id=705
+    (IS_CHROME ? xit : it)("should properties of attribute listener are enumerable.", function() {
+        var keys = [];
+        for (var key in target) {
+            keys.push(key);
+        }
+
+        assert.deepEqual(keys, ["ontest", "onhello"]);
+    });
+
+    it("should call attribute listeners when called `dispatchEvent()`.", function() {
+        var listener = spy();
+        var event = createEvent("test");
+        target.ontest = listener;
+        target.dispatchEvent(event);
+
+        assert(target.ontest === listener);
+        assert(listener.callCount === 1);
+    });
+
+    it("should not call removed listeners.", function() {
+        var listener = spy();
+        var event = createEvent("test");
+        target.ontest = listener;
+        target.ontest = null;
+        target.dispatchEvent(event);
+
+        assert(target.ontest === null);
+        assert(listener.called === false);
+    });
+
+    it("should not allow duplicate in listeners.", function() {
+        var listener = spy();
+        var event = createEvent("test");
+        target.ontest = listener;
+        target.ontest = listener;
+        target.dispatchEvent(event);
+
+        assert(target.ontest === listener);
+        assert(listener.callCount === 1);
+    });
+
+    it("should allow duplicate in listeners if these kind is different.", function() {
+        var listener = spy();
+        var event = createEvent("test");
+        target.addEventListener("test", listener, false);
+        target.ontest = listener;
+        target.addEventListener("test", listener, true);
+        target.dispatchEvent(event);
+
+        assert(target.ontest === listener);
+        assert(listener.callCount === 3);
+
+        // for coverage.
+        target.ontest = null;
+        assert(target.ontest === null);
+    });
+
+    it("should throw a TypeError if the listener is not a function.", function() {
+        assert.throws(
+            function() { target.ontest = "listener"; },
+            TypeError
+        );
+    });
+});
