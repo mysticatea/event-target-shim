@@ -12,10 +12,17 @@ An implementation of [W3C EventTarget interface](http://www.w3.org/TR/2000/REC-D
 - This provides `EventTarget` constructor that can inherit for your custom object.
 - This provides an utility that defines properties of attribute listeners (e.g. `obj.onclick`).
 
+```js
+// The prototype of this class has getters and setters of `onmessage` and `onerror`.
+class Foo extends EventTarget("message", "error") {
+    //...
+}
+```
+
 ## Installation
 
 ```
-npm install event-target-shim
+npm install --save event-target-shim
 ```
 
 Or download from `dist` directory.
@@ -62,6 +69,12 @@ foo.dispatchEvent({type: "foo", hello: "hello"});
 // dispatch a cancelable event.
 if (!foo.dispatchEvent({type: "foo", cancelable: true, hello: "hey"})) {
     console.log("defaultPrevented");
+}
+
+//-----------------------------------------------------------------------------
+// If `window.EventTarget` exists, `EventTarget` inherits from `window.EventTarget`.
+if (foo instanceof window.EventTarget) {
+    console.log("yay!");
 }
 ```
 
@@ -142,7 +155,7 @@ foo.dispatchEvent({type: "error", message: "an error"});
 ### Use with RequireJS
 
 ```js
-require(["./node_modules/event-target-shim/dist/event-target-shim.min.js"], function(EventTarget) {
+require(["https://cdn.rawgit.com/mysticatea/event-target-shim/v1.1.0/dist/event-target-shim.min.js"], function(EventTarget) {
     //...
 });
 ```
@@ -159,19 +172,5 @@ declare class EventTarget {
 
 // Define EventTarget type with attribute listeners.
 declare function EventTarget(...types: string[]): EventTarget;
-```
-
-If `window.EventTarget` exists, `EventTarget` is inherit from `window.EventTarget`.
-So,
-
-```js
-const EventTarget = require("event-target-shim");
-
-class Foo extends EventTarget {
-}
-
-let foo = new Foo();
-if (foo instanceof window.EventTarget) {
-    console.log("yay!");
-}
+declare function EventTarget(types: string[]): EventTarget;
 ```
