@@ -286,6 +286,23 @@ describe("EventTarget:", function() {
         target.addEventListener("test", listener);
         target.dispatchEvent(event);
     });
+
+    it("should not call removed object listeners.", function() {
+        var listener = {
+            __proto__: {
+                handleEvent: function() {
+                    this.complete();
+                },
+                complete: function() {
+                    assert(false);
+                }
+            }
+        };
+        var event = createEvent("test");
+        target.addEventListener("test", listener);
+        target.removeEventListener("test", listener);
+        target.dispatchEvent(event);
+    });
 });
 
 describe("EventTarget with attribute listeners:", function() {
