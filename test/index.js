@@ -27,6 +27,7 @@ var HAS_EVENT_TARGET_INTERFACE = (
 // "enumerable" flag cannot be overridden in V8 and IE.
 // And the interface methods are enumerable in Blink.
 // Firefox is perfect.
+// See Also: https://code.google.com/p/v8/issues/detail?id=705
 var IS_INTERFACE_METHODS_ENUMERABLE = (function() {
     var obj = Object.create(
         {test: 0},
@@ -261,39 +262,109 @@ function doBasicTests() {
             function() { this.target.addEventListener("test", "listener"); }.bind(this),
             TypeError
         );
+        assert.throws(
+            function() { this.target.addEventListener("test", false); }.bind(this),
+            TypeError
+        );
+        assert.throws(
+            function() { this.target.addEventListener("test", 0); }.bind(this),
+            TypeError
+        );
+        assert.throws(
+            function() { this.target.addEventListener("test", ""); }.bind(this),
+            TypeError
+        );
+    });
+
+    it("should allow an object which has \"handleEvent\" method as a listener.", /* @this */ function() {
+        var lastEvent = null;
+        var listenerThis = null;
+        var listener = {handleEvent: spy(function(e) { lastEvent = e; listenerThis = this; })}; // eslint-disable-line no-invalid-this
+        var event = createEvent("test", false, false, "detail");
+        this.target.addEventListener("test", listener);
+        this.target.dispatchEvent(event);
+
+        assert(listener.handleEvent.callCount === 1);
+        assert(lastEvent.type === "test");
+        assert(lastEvent.target === this.target);
+        assert(lastEvent.currentTarget === this.target);
+        assert(lastEvent.eventPhase === 2);
+        assert(lastEvent.bubbles === false);
+        assert(lastEvent.cancelable === false);
+        assert(lastEvent.defaultPrevented === false);
+        assert(lastEvent.isTrusted === false);
+        assert(lastEvent.timeStamp === event.timeStamp);
+        assert(lastEvent.detail === "detail");
+        assert(listenerThis === listener);
+        assert(this.target.removeEventListener("test", listener));
+    });
+
+    it("should not call removed listeners (an object with \"handleEvent\" method).", /* @this */ function() {
+        var listener = {handleEvent: spy()};
+        var event = createEvent("test");
+        this.target.addEventListener("test", listener);
+        this.target.removeEventListener("test", listener);
+        this.target.dispatchEvent(event);
+
+        assert(listener.handleEvent.called === false);
+    });
+
+    it("should accept an object without \"handleEvent\" method.", /* @this */ function() {
+        var listener = {};
+        this.target.addEventListener("test", listener);
+        this.target.dispatchEvent(createEvent("test"));
+
+        var handleEvent = listener.handleEvent = spy();
+        this.target.dispatchEvent(createEvent("test"));
+
+        listener.handleEvent = {};
+        this.target.dispatchEvent(createEvent("test"));
+
+        delete listener.handleEvent;
+        this.target.dispatchEvent(createEvent("test"));
+
+        assert(handleEvent.callCount === 1);
+    });
+
+    it("should not call \"handleEvent\" method if the object is a function.", /* @this */ function() {
+        var listener = spy();
+        listener.handleEvent = spy();
+        this.target.addEventListener("test", listener);
+        this.target.dispatchEvent(createEvent("test"));
+
+        assert(listener.callCount === 1);
+        assert(listener.handleEvent.callCount === 0);
     });
 
     it("should allow a listener to be an object with a handleEvent method and have this set correctly", /* @this */ function() {
         var listener = {
             __proto__: {
-                handleEvent: function() {
-                    this.complete();
-                },
-                complete: function() {
-                    assert(true);
-                }
+                handleEvent: function() { this.complete(); },
+                complete: spy()
             }
         };
+
         var event = createEvent("test");
         this.target.addEventListener("test", listener);
         this.target.dispatchEvent(event);
+
+        assert(listener.complete.callCount === 1);
     });
 
     it("should not call removed object listeners.", /* @this */ function() {
         var listener = {
             __proto__: {
-                handleEvent: function() {
-                    this.complete();
-                },
-                complete: function() {
-                    assert(false);
-                }
+                handleEvent: function() { this.complete(); },
+                complete: spy()
             }
         };
+
         var event = createEvent("test");
         this.target.addEventListener("test", listener);
         this.target.removeEventListener("test", listener);
         this.target.dispatchEvent(event);
+
+        assert(listener.complete.callCount === 0);
     });
 }
 
@@ -303,8 +374,6 @@ function doAttributeListenerTests() {
         assert(this.target.ontest === null);
     });
 
-    // V8 has a bug.
-    // See Also: https://code.google.com/p/v8/issues/detail?id=705
     (IS_INTERFACE_METHODS_ENUMERABLE ? xit : it)("should properties of attribute listener are enumerable.", /* @this */ function() {
         var keys = [];
         for (var key in this.target) {
@@ -363,6 +432,35 @@ function doAttributeListenerTests() {
     });
 
     it("should ignore if the listener is not an object.", /* @this */ function() {
+        this.target.ontest = "listener";
+        assert(this.target.ontest === null);
+
+        this.target.ontest = "";
+        assert(this.target.ontest === null);
+
+        this.target.ontest = false;
+        assert(this.target.ontest === null);
+
+        this.target.ontest = 0;
+        assert(this.target.ontest === null);
+    });
+
+    it("should store but not call if the listener is an object.", /* @this */ function() {
+        var listener = {handleEvent: spy()};
+
+        this.target.ontest = listener;
+        this.target.dispatchEvent(createEvent("test"));
+
+        assert(this.target.ontest === listener);
+        assert(listener.handleEvent.callCount === 0);
+    });
+
+    it("should handle a non object as null.", /* @this */ function() {
+        var listener = {};
+
+        this.target.ontest = listener;
+        assert(this.target.ontest === listener);
+
         this.target.ontest = "listener";
         assert(this.target.ontest === null);
     });
