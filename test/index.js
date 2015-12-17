@@ -264,11 +264,44 @@ describe("EventTarget:", function() {
         target.removeEventListener("test");
     });
 
-    it("should throw a TypeError if the listener is not a function", function() {
+    it("should throw a TypeError if the listener is not a function or object with a handleEvent method", function() {
         assert.throws(
             function() { target.addEventListener("test", "listener"); },
             TypeError
         );
+    });
+
+    it("should allow a listener to be an object with a handleEvent method and have this set correctly", function() {
+        var listener = {
+            __proto__: {
+                handleEvent: function() {
+                    this.complete();
+                },
+                complete: function() {
+                    assert(true);
+                }
+            }
+        };
+        var event = createEvent("test");
+        target.addEventListener("test", listener);
+        target.dispatchEvent(event);
+    });
+
+    it("should not call removed object listeners.", function() {
+        var listener = {
+            __proto__: {
+                handleEvent: function() {
+                    this.complete();
+                },
+                complete: function() {
+                    assert(false);
+                }
+            }
+        };
+        var event = createEvent("test");
+        target.addEventListener("test", listener);
+        target.removeEventListener("test", listener);
+        target.dispatchEvent(event);
     });
 });
 
