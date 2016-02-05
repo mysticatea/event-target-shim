@@ -1,11 +1,10 @@
 # event-target-shim
 
+[![npm version](https://img.shields.io/npm/v/event-target-shim.svg)](https://www.npmjs.com/package/event-target-shim)
+[![Downloads/month](https://img.shields.io/npm/dm/event-target-shim.svg)](https://www.npmjs.com/package/event-target-shim)
 [![Build Status](https://travis-ci.org/mysticatea/event-target-shim.svg?branch=master)](https://travis-ci.org/mysticatea/event-target-shim)
 [![Coverage Status](https://coveralls.io/repos/mysticatea/event-target-shim/badge.svg?branch=master&service=github)](https://coveralls.io/github/mysticatea/event-target-shim?branch=master)
 [![Dependency Status](https://david-dm.org/mysticatea/event-target-shim.svg)](https://david-dm.org/mysticatea/event-target-shim)
-[![devDependency Status](https://david-dm.org/mysticatea/event-target-shim/dev-status.svg)](https://david-dm.org/mysticatea/event-target-shim#info=devDependencies)<br>
-[![npm version](https://img.shields.io/npm/v/event-target-shim.svg)](https://www.npmjs.com/package/event-target-shim)
-[![Downloads/month](https://img.shields.io/npm/dm/event-target-shim.svg)](https://www.npmjs.com/package/event-target-shim)
 
 An implementation of [W3C EventTarget interface](http://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113/events.html#Events-EventTarget), plus few extensions.
 
