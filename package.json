@@ -8,14 +8,15 @@
     "lib"
   ],
   "scripts": {
-    "preversion": "npm run build",
+    "preversion": "npm test",
+    "version": "npm run build",
     "postversion": "git push && git push --tags",
-    "clean": "rimraf coverage dist",
+    "clean": "rimraf coverage",
     "lint": "if-node-version \">=4\" eslint lib test",
-    "build": "npm-run-all clean lint test build:*",
+    "build": "rimraf dist && run-s build:*",
     "build:dist": "mkdirp dist && browserify lib/event-target.js --standalone event-target-shim > dist/event-target-shim.js",
     "build:dist-min": "uglifyjs dist/event-target-shim.js --compress --mangle > dist/event-target-shim.min.js",
-    "test": "npm-run-all clean lint && karma start karma.conf.js --single-run",
+    "test": "run-s clean lint && karma start karma.conf.js --single-run",
     "watch": "karma start karma.conf.js --watch",
     "travis": "istanbul cover node_modules/mocha/bin/_mocha --report lcovonly -- test/**/*.js --require scripts/power-assert",
     "codecov": "codecov"
