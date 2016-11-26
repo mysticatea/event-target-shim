@@ -412,6 +412,64 @@ function doBasicTests() {
 
         assert(listener.complete.callCount === 0)
     })
+
+    it("it should call the listener with `once` option only one time.", /* @this */ function() {
+        var listener = spy()
+        this.target.addEventListener("test", listener, {once: true})
+        this.target.dispatchEvent(createEvent("test"))
+        this.target.dispatchEvent(createEvent("test"))
+
+        assert(listener.callCount === 1)
+        assert(this.target.removeEventListener("test", listener) === false)
+    })
+
+    it("should allow duplicate listeners if those capture flag are different (`{}` and `true`).", /* @this */ function() {
+        var listener = spy()
+        var event = createEvent("test")
+        this.target.addEventListener("test", listener, {})
+        this.target.addEventListener("test", listener, true)
+        this.target.dispatchEvent(event)
+
+        assert(listener.callCount === 2)
+        assert(this.target.removeEventListener("test", listener, false))
+        assert(this.target.removeEventListener("test", listener, true))
+    })
+
+    it("should allow duplicate listeners if those capture flag are different (`{capture: true}` and `false`).", /* @this */ function() {
+        var listener = spy()
+        var event = createEvent("test")
+        this.target.addEventListener("test", listener, {capture: true})
+        this.target.addEventListener("test", listener, false)
+        this.target.dispatchEvent(event)
+
+        assert(listener.callCount === 2)
+        assert(this.target.removeEventListener("test", listener, false))
+        assert(this.target.removeEventListener("test", listener, true))
+    })
+
+    it("should disallow duplicate listeners if those capture flag are same (`{}` and `false`).", /* @this */ function() {
+        var listener = spy()
+        var event = createEvent("test")
+        this.target.addEventListener("test", listener, {})
+        this.target.addEventListener("test", listener, false)
+        this.target.dispatchEvent(event)
+
+        assert(listener.callCount === 1)
+        assert(this.target.removeEventListener("test", listener, {capture: false}))
+        assert(this.target.removeEventListener("test", listener, {capture: false}) === false)
+    })
+
+    it("should disallow duplicate listeners if those capture flag are same (`{capture: true}` and `true`).", /* @this */ function() {
+        var listener = spy()
+        var event = createEvent("test")
+        this.target.addEventListener("test", listener, {capture: true})
+        this.target.addEventListener("test", listener, true)
+        this.target.dispatchEvent(event)
+
+        assert(listener.callCount === 1)
+        assert(this.target.removeEventListener("test", listener, {capture: true}))
+        assert(this.target.removeEventListener("test", listener, {capture: true}) === false)
+    })
 }
 
 /**
