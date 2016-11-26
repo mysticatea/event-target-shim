@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "preversion": "npm test",
-    "version": "npm run build",
+    "version": "npm run build && git add dist/*",
     "postversion": "git push && git push --tags",
     "clean": "rimraf coverage",
     "lint": "if-node-version \">=4\" eslint lib test",
