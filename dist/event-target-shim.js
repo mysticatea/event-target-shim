@@ -4,21 +4,21 @@
  * @copyright 2015 Toru Nagashima. All rights reserved.
  * See LICENSE file in root directory for full license.
  */
-
-"use strict";
+"use strict"
 
 /**
  * Creates a unique key.
  *
  * @param {string} name - A name to create.
- * @returns {symbol|string}
+ * @returns {symbol|string} Generated unique key.
  * @private
  */
-var createUniqueKey = exports.createUniqueKey = (typeof Symbol !== "undefined" ?
-    Symbol :
-    function createUniqueKey(name) {
-        return "[[" + name + "_" + Math.random().toFixed(8).slice(2) + "]]";
-    });
+var createUniqueKey = module.exports.createUniqueKey = (
+    typeof Symbol !== "undefined" ? Symbol : //eslint-disable-line no-undef
+    /* otherwise */ function createUniqueKey(name) {
+        return "[[" + name + "_" + Math.random().toFixed(8).slice(2) + "]]"
+    }
+)
 
 /**
  * The key of listeners.
@@ -26,7 +26,7 @@ var createUniqueKey = exports.createUniqueKey = (typeof Symbol !== "undefined" ?
  * @type {symbol|string}
  * @private
  */
-exports.LISTENERS = createUniqueKey("listeners");
+module.exports.LISTENERS = createUniqueKey("listeners")
 
 /**
  * A value of kind for listeners which are registered in the capturing phase.
@@ -34,7 +34,7 @@ exports.LISTENERS = createUniqueKey("listeners");
  * @type {number}
  * @private
  */
-exports.CAPTURE = 1;
+module.exports.CAPTURE = 1
 
 /**
  * A value of kind for listeners which are registered in the bubbling phase.
@@ -42,7 +42,7 @@ exports.CAPTURE = 1;
  * @type {number}
  * @private
  */
-exports.BUBBLE = 2;
+module.exports.BUBBLE = 2
 
 /**
  * A value of kind for listeners which are registered as an attribute.
@@ -50,7 +50,7 @@ exports.BUBBLE = 2;
  * @type {number}
  * @private
  */
-exports.ATTRIBUTE = 3;
+module.exports.ATTRIBUTE = 3
 
 /**
  * @typedef object ListenerNode
@@ -67,9 +67,9 @@ exports.ATTRIBUTE = 3;
  * @param {number} kind - The kind of the listener.
  * @returns {ListenerNode} The created listener node.
  */
-exports.newNode = function newNode(listener, kind) {
-    return {listener: listener, kind: kind, next: null};
-};
+module.exports.newNode = function newNode(listener, kind) {
+    return {listener: listener, kind: kind, next: null}
+}
 
 },{}],2:[function(require,module,exports){
 /**
@@ -77,17 +77,16 @@ exports.newNode = function newNode(listener, kind) {
  * @copyright 2015 Toru Nagashima. All rights reserved.
  * See LICENSE file in root directory for full license.
  */
-
-"use strict";
+"use strict"
 
 //-----------------------------------------------------------------------------
 // Requirements
 //-----------------------------------------------------------------------------
 
-var Commons = require("./commons");
-var LISTENERS = Commons.LISTENERS;
-var ATTRIBUTE = Commons.ATTRIBUTE;
-var newNode = Commons.newNode;
+var Commons = require("./commons")
+var LISTENERS = Commons.LISTENERS
+var ATTRIBUTE = Commons.ATTRIBUTE
+var newNode = Commons.newNode
 
 //-----------------------------------------------------------------------------
 // Helpers
@@ -101,14 +100,14 @@ var newNode = Commons.newNode;
  * @returns {function|null} The found attribute listener.
  */
 function getAttributeListener(eventTarget, type) {
-    var node = eventTarget[LISTENERS][type];
+    var node = eventTarget[LISTENERS][type]
     while (node != null) {
         if (node.kind === ATTRIBUTE) {
-            return node.listener;
+            return node.listener
         }
-        node = node.next;
+        node = node.next
     }
-    return null;
+    return null
 }
 
 /**
@@ -121,35 +120,35 @@ function getAttributeListener(eventTarget, type) {
  */
 function setAttributeListener(eventTarget, type, listener) {
     if (typeof listener !== "function" && typeof listener !== "object") {
-        listener = null; // eslint-disable-line no-param-reassign
+        listener = null // eslint-disable-line no-param-reassign
     }
 
-    var prev = null;
-    var node = eventTarget[LISTENERS][type];
+    var prev = null
+    var node = eventTarget[LISTENERS][type]
     while (node != null) {
         if (node.kind === ATTRIBUTE) {
             // Remove old value.
             if (prev == null) {
-                eventTarget[LISTENERS][type] = node.next;
+                eventTarget[LISTENERS][type] = node.next
             }
             else {
-                prev.next = node.next;
+                prev.next = node.next
             }
         }
         else {
-            prev = node;
+            prev = node
         }
 
-        node = node.next;
+        node = node.next
     }
 
     // Add new value.
     if (listener != null) {
         if (prev == null) {
-            eventTarget[LISTENERS][type] = newNode(listener, ATTRIBUTE);
+            eventTarget[LISTENERS][type] = newNode(listener, ATTRIBUTE)
         }
         else {
-            prev.next = newNode(listener, ATTRIBUTE);
+            prev.next = newNode(listener, ATTRIBUTE)
         }
     }
 }
@@ -165,32 +164,40 @@ function setAttributeListener(eventTarget, type, listener) {
  * @param {string[]} types - A list of event types which are defined as attribute listeners.
  * @returns {EventTarget} The defined `EventTarget` implementation which has attribute listeners.
  */
-exports.defineCustomEventTarget = function(EventTargetBase, types) {
+module.exports.defineCustomEventTarget = function(EventTargetBase, types) {
+    /**
+     * The constructor of custom event target.
+     * @constructor
+     */
     function EventTarget() {
-        EventTargetBase.call(this);
+        EventTargetBase.call(this)
     }
 
     var descripter = {
         constructor: {
             value: EventTarget,
             configurable: true,
-            writable: true
-        }
-    };
+            writable: true,
+        },
+    }
 
     types.forEach(function(type) {
         descripter["on" + type] = {
-            get: function() { return getAttributeListener(this, type); },
-            set: function(listener) { setAttributeListener(this, type, listener); },
+            get: function() {
+                return getAttributeListener(this, type)
+            },
+            set: function(listener) {
+                setAttributeListener(this, type, listener)
+            },
             configurable: true,
-            enumerable: true
-        };
-    });
+            enumerable: true,
+        }
+    })
 
-    EventTarget.prototype = Object.create(EventTargetBase.prototype, descripter);
+    EventTarget.prototype = Object.create(EventTargetBase.prototype, descripter)
 
-    return EventTarget;
-};
+    return EventTarget
+}
 
 },{"./commons":1}],3:[function(require,module,exports){
 /**
@@ -198,29 +205,30 @@ exports.defineCustomEventTarget = function(EventTargetBase, types) {
  * @copyright 2015 Toru Nagashima. All rights reserved.
  * See LICENSE file in root directory for full license.
  */
+"use strict"
 
-"use strict";
-
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Requirements
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-var Commons = require("./commons");
-var CustomEventTarget = require("./custom-event-target");
-var EventWrapper = require("./event-wrapper");
-var LISTENERS = Commons.LISTENERS;
-var CAPTURE = Commons.CAPTURE;
-var BUBBLE = Commons.BUBBLE;
-var ATTRIBUTE = Commons.ATTRIBUTE;
-var newNode = Commons.newNode;
-var defineCustomEventTarget = CustomEventTarget.defineCustomEventTarget;
-var createEventWrapper = EventWrapper.createEventWrapper;
+/*globals window */
+
+var Commons = require("./commons")
+var CustomEventTarget = require("./custom-event-target")
+var EventWrapper = require("./event-wrapper")
+var LISTENERS = Commons.LISTENERS
+var CAPTURE = Commons.CAPTURE
+var BUBBLE = Commons.BUBBLE
+var ATTRIBUTE = Commons.ATTRIBUTE
+var newNode = Commons.newNode
+var defineCustomEventTarget = CustomEventTarget.defineCustomEventTarget
+var createEventWrapper = EventWrapper.createEventWrapper
 var STOP_IMMEDIATE_PROPAGATION_FLAG =
-    EventWrapper.STOP_IMMEDIATE_PROPAGATION_FLAG;
+    EventWrapper.STOP_IMMEDIATE_PROPAGATION_FLAG
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Constants
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /**
  * A flag which shows there is the native `EventTarget` interface object.
@@ -231,11 +239,11 @@ var STOP_IMMEDIATE_PROPAGATION_FLAG =
 var HAS_EVENTTARGET_INTERFACE = (
     typeof window !== "undefined" &&
     typeof window.EventTarget !== "undefined"
-);
+)
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Public Interface
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /**
  * An implementation for `EventTarget` interface.
@@ -254,15 +262,15 @@ var EventTarget = module.exports = function EventTarget() {
         //     var kind: CAPTURE|BUBBLE|ATTRIBUTE
         //     var next: ListenerNode|null
         // }
-        Object.defineProperty(this, LISTENERS, {value: Object.create(null)});
+        Object.defineProperty(this, LISTENERS, {value: Object.create(null)})
     }
     else if (arguments.length === 1 && Array.isArray(arguments[0])) {
-        return defineCustomEventTarget(EventTarget, arguments[0]);
+        return defineCustomEventTarget(EventTarget, arguments[0])
     }
     else if (arguments.length > 0) {
-        var types = Array(arguments.length);
+        var types = Array(arguments.length)
         for (var i = 0; i < arguments.length; ++i) {
-            types[i] = arguments[i];
+            types[i] = arguments[i]
         }
 
         // To use to extend with attribute listener properties.
@@ -270,12 +278,12 @@ var EventTarget = module.exports = function EventTarget() {
         //     class MyCustomObject extends EventTarget("message", "error") {
         //         //...
         //     }
-        return defineCustomEventTarget(EventTarget, types);
+        return defineCustomEventTarget(EventTarget, types)
     }
     else {
-        throw new TypeError("Cannot call a class as a function");
+        throw new TypeError("Cannot call a class as a function")
     }
-};
+}
 
 EventTarget.prototype = Object.create(
     (HAS_EVENTTARGET_INTERFACE ? window.EventTarget : Object).prototype,
@@ -283,106 +291,106 @@ EventTarget.prototype = Object.create(
         constructor: {
             value: EventTarget,
             writable: true,
-            configurable: true
+            configurable: true,
         },
 
         addEventListener: {
             value: function addEventListener(type, listener, capture) {
                 if (listener == null) {
-                    return false;
+                    return false
                 }
                 if (typeof listener !== "function" && typeof listener !== "object") {
-                    throw new TypeError("\"listener\" is not an object.");
+                    throw new TypeError("\"listener\" is not an object.")
                 }
 
-                var kind = (capture ? CAPTURE : BUBBLE);
-                var node = this[LISTENERS][type];
+                var kind = (capture ? CAPTURE : BUBBLE)
+                var node = this[LISTENERS][type]
                 if (node == null) {
-                    this[LISTENERS][type] = newNode(listener, kind);
-                    return true;
+                    this[LISTENERS][type] = newNode(listener, kind)
+                    return true
                 }
 
-                var prev = null;
+                var prev = null
                 while (node != null) {
                     if (node.listener === listener && node.kind === kind) {
                         // Should ignore a duplicated listener.
-                        return false;
+                        return false
                     }
-                    prev = node;
-                    node = node.next;
+                    prev = node
+                    node = node.next
                 }
 
-                prev.next = newNode(listener, kind);
-                return true;
+                prev.next = newNode(listener, kind)
+                return true
             },
             configurable: true,
-            writable: true
+            writable: true,
         },
 
         removeEventListener: {
             value: function removeEventListener(type, listener, capture) {
                 if (listener == null) {
-                    return false;
+                    return false
                 }
 
-                var kind = (capture ? CAPTURE : BUBBLE);
-                var prev = null;
-                var node = this[LISTENERS][type];
+                var kind = (capture ? CAPTURE : BUBBLE)
+                var prev = null
+                var node = this[LISTENERS][type]
                 while (node != null) {
                     if (node.listener === listener && node.kind === kind) {
                         if (prev == null) {
-                            this[LISTENERS][type] = node.next;
+                            this[LISTENERS][type] = node.next
                         }
                         else {
-                            prev.next = node.next;
+                            prev.next = node.next
                         }
-                        return true;
+                        return true
                     }
 
-                    prev = node;
-                    node = node.next;
+                    prev = node
+                    node = node.next
                 }
 
-                return false;
+                return false
             },
             configurable: true,
-            writable: true
+            writable: true,
         },
 
         dispatchEvent: {
             value: function dispatchEvent(event) {
                 // If listeners aren't registered, terminate.
-                var node = this[LISTENERS][event.type];
+                var node = this[LISTENERS][event.type]
                 if (node == null) {
-                    return true;
+                    return true
                 }
 
                 // Since we cannot rewrite several properties, so wrap object.
-                var wrapped = createEventWrapper(event, this);
+                var wrapped = createEventWrapper(event, this)
 
                 // This doesn't process capturing phase and bubbling phase.
                 // This isn't participating in a tree.
                 while (node != null) {
                     if (typeof node.listener === "function") {
-                        node.listener.call(this, wrapped);
+                        node.listener.call(this, wrapped)
                     }
                     else if (node.kind !== ATTRIBUTE && typeof node.listener.handleEvent === "function") {
-                        node.listener.handleEvent(wrapped);
+                        node.listener.handleEvent(wrapped)
                     }
 
                     if (wrapped[STOP_IMMEDIATE_PROPAGATION_FLAG]) {
-                        break;
+                        break
                     }
-                    node = node.next;
+                    node = node.next
                 }
 
-                return !wrapped.defaultPrevented;
+                return !wrapped.defaultPrevented
             },
             configurable: true,
-            writable: true
-        }
+            writable: true,
+        },
     }
-);
+)
 
 },{"./commons":1,"./custom-event-target":2,"./event-wrapper":4}],4:[function(require,module,exports){
 /**
@@ -390,14 +398,13 @@ EventTarget.prototype = Object.create(
  * @copyright 2015 Toru Nagashima. All rights reserved.
  * See LICENSE file in root directory for full license.
  */
-
-"use strict";
+"use strict"
 
 //-----------------------------------------------------------------------------
 // Requirements
 //-----------------------------------------------------------------------------
 
-var createUniqueKey = require("./commons").createUniqueKey;
+var createUniqueKey = require("./commons").createUniqueKey
 
 //-----------------------------------------------------------------------------
 // Constsnts
@@ -410,7 +417,7 @@ var createUniqueKey = require("./commons").createUniqueKey;
  * @private
  */
 var STOP_IMMEDIATE_PROPAGATION_FLAG =
-    createUniqueKey("stop_immediate_propagation_flag");
+    createUniqueKey("stop_immediate_propagation_flag")
 
 /**
  * The key of the flag which is turned on by `preventDefault` method.
@@ -418,7 +425,7 @@ var STOP_IMMEDIATE_PROPAGATION_FLAG =
  * @type {symbol|string}
  * @private
  */
-var CANCELED_FLAG = createUniqueKey("canceled_flag");
+var CANCELED_FLAG = createUniqueKey("canceled_flag")
 
 /**
  * The key of the original event object.
@@ -426,7 +433,7 @@ var CANCELED_FLAG = createUniqueKey("canceled_flag");
  * @type {symbol|string}
  * @private
  */
-var ORIGINAL_EVENT = createUniqueKey("original_event");
+var ORIGINAL_EVENT = createUniqueKey("original_event")
 
 /**
  * Method definitions for the event wrapper.
@@ -437,55 +444,57 @@ var ORIGINAL_EVENT = createUniqueKey("original_event");
 var wrapperPrototypeDefinition = Object.freeze({
     stopPropagation: Object.freeze({
         value: function stopPropagation() {
-            var e = this[ORIGINAL_EVENT];
+            var e = this[ORIGINAL_EVENT]
             if (typeof e.stopPropagation === "function") {
-                e.stopPropagation();
+                e.stopPropagation()
             }
         },
         writable: true,
-        configurable: true
+        configurable: true,
     }),
 
     stopImmediatePropagation: Object.freeze({
         value: function stopImmediatePropagation() {
-            this[STOP_IMMEDIATE_PROPAGATION_FLAG] = true;
+            this[STOP_IMMEDIATE_PROPAGATION_FLAG] = true
 
-            var e = this[ORIGINAL_EVENT];
+            var e = this[ORIGINAL_EVENT]
             if (typeof e.stopImmediatePropagation === "function") {
-                e.stopImmediatePropagation();
+                e.stopImmediatePropagation()
             }
         },
         writable: true,
-        configurable: true
+        configurable: true,
     }),
 
     preventDefault: Object.freeze({
         value: function preventDefault() {
             if (this.cancelable === true) {
-                this[CANCELED_FLAG] = true;
+                this[CANCELED_FLAG] = true
             }
 
-            var e = this[ORIGINAL_EVENT];
+            var e = this[ORIGINAL_EVENT]
             if (typeof e.preventDefault === "function") {
-                e.preventDefault();
+                e.preventDefault()
             }
         },
         writable: true,
-        configurable: true
+        configurable: true,
     }),
 
     defaultPrevented: Object.freeze({
-        get: function defaultPrevented() { return this[CANCELED_FLAG]; },
+        get: function defaultPrevented() {
+            return this[CANCELED_FLAG]
+        },
         enumerable: true,
-        configurable: true
-    })
-});
+        configurable: true,
+    }),
+})
 
 //-----------------------------------------------------------------------------
 // Public Interface
 //-----------------------------------------------------------------------------
 
-exports.STOP_IMMEDIATE_PROPAGATION_FLAG = STOP_IMMEDIATE_PROPAGATION_FLAG;
+module.exports.STOP_IMMEDIATE_PROPAGATION_FLAG = STOP_IMMEDIATE_PROPAGATION_FLAG
 
 /**
  * Creates an event wrapper.
@@ -498,10 +507,10 @@ exports.STOP_IMMEDIATE_PROPAGATION_FLAG = STOP_IMMEDIATE_PROPAGATION_FLAG;
  * @returns {Event} The created wrapper. This object is implemented `Event` interface.
  * @private
  */
-exports.createEventWrapper = function createEventWrapper(event, eventTarget) {
+module.exports.createEventWrapper = function createEventWrapper(event, eventTarget) {
     var timeStamp = (
         typeof event.timeStamp === "number" ? event.timeStamp : Date.now()
-    );
+    )
     var propertyDefinition = {
         type: {value: event.type, enumerable: true},
         target: {value: eventTarget, enumerable: true},
@@ -510,22 +519,22 @@ exports.createEventWrapper = function createEventWrapper(event, eventTarget) {
         bubbles: {value: Boolean(event.bubbles), enumerable: true},
         cancelable: {value: Boolean(event.cancelable), enumerable: true},
         timeStamp: {value: timeStamp, enumerable: true},
-        isTrusted: {value: false, enumerable: true}
-    };
-    propertyDefinition[STOP_IMMEDIATE_PROPAGATION_FLAG] = {value: false, writable: true};
-    propertyDefinition[CANCELED_FLAG] = {value: false, writable: true};
-    propertyDefinition[ORIGINAL_EVENT] = {value: event};
+        isTrusted: {value: false, enumerable: true},
+    }
+    propertyDefinition[STOP_IMMEDIATE_PROPAGATION_FLAG] = {value: false, writable: true}
+    propertyDefinition[CANCELED_FLAG] = {value: false, writable: true}
+    propertyDefinition[ORIGINAL_EVENT] = {value: event}
 
     // For CustomEvent.
     if (typeof event.detail !== "undefined") {
-        propertyDefinition.detail = {value: event.detail, enumerable: true};
+        propertyDefinition.detail = {value: event.detail, enumerable: true}
     }
 
     return Object.create(
         Object.create(event, wrapperPrototypeDefinition),
         propertyDefinition
-    );
-};
+    )
+}
 
 },{"./commons":1}]},{},[3])(3)
 });

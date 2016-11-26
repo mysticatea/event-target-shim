@@ -1,5 +1,5 @@
 {
-  "env": {"mocha": true},
+  "extends": "mysticatea/mocha",
   "rules": {
     // To use `class TestTarget extends EventTarget("test") {}`
     "new-cap": 0
