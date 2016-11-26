@@ -179,6 +179,7 @@ interface EventListenerOptions {
 }
 interface AddEventListenerOptions extends EventListenerOptions {
     once?: boolean;
+    passive?: boolean;
 }
 
 // Non-standard.

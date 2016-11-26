@@ -470,6 +470,28 @@ function doBasicTests() {
         assert(this.target.removeEventListener("test", listener, {capture: true}))
         assert(this.target.removeEventListener("test", listener, {capture: true}) === false)
     })
+
+    it("a result of `dispatchEvent()` should be true even if had canceled by passive listeners.", /* @this */ function() {
+        var listener = spy(function(e) {
+            return e.preventDefault()
+        })
+        var event = createEvent("test", false, true)
+        this.target.addEventListener("test", listener, {passive: true})
+        var result = this.target.dispatchEvent(event)
+
+        assert(result === true)
+    })
+
+    it("a result of `dispatchEvent()` should be false even if had canceled by non-passive listeners.", /* @this */ function() {
+        var listener = spy(function(e) {
+            return e.preventDefault()
+        })
+        var event = createEvent("test", false, true)
+        this.target.addEventListener("test", listener, {passive: false})
+        var result = this.target.dispatchEvent(event)
+
+        assert(result === false)
+    })
 }
 
 /**
