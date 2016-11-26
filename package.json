@@ -18,12 +18,12 @@
     "test": "npm-run-all clean lint && karma start karma.conf.js --single-run",
     "watch": "karma start karma.conf.js --watch",
     "travis": "istanbul cover node_modules/mocha/bin/_mocha --report lcovonly -- test/**/*.js --require scripts/power-assert",
-    "coveralls": "cat ./coverage/lcov.info | coveralls"
+    "codecov": "codecov"
   },
   "devDependencies": {
     "browserify": "^13.1.1",
     "browserify-istanbul": "^2.0.0",
-    "coveralls": "^2.11.4",
+    "codecov": "^1.0.1",
     "eslint": "^3.11.0",
     "eslint-config-mysticatea": "^7.0.1",
     "espower-loader": "^1.0.0",

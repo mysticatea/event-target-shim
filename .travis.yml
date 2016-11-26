@@ -9,4 +9,4 @@ node_js:
 script:
   - npm run travis
 after_success:
-  - npm run coveralls
+  - npm run codecov
