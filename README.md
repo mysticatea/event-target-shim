@@ -6,7 +6,7 @@
 [![Coverage Status](https://codecov.io/gh/mysticatea/event-target-shim/branch/master/graph/badge.svg)](https://codecov.io/gh/mysticatea/event-target-shim)
 [![Dependency Status](https://david-dm.org/mysticatea/event-target-shim.svg)](https://david-dm.org/mysticatea/event-target-shim)
 
-An implementation of [W3C EventTarget interface](http://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113/events.html#Events-EventTarget), plus few extensions.
+An implementation of [WHATWG EventTarget interface](https://dom.spec.whatwg.org/#interface-eventtarget), plus few extensions.
 
 - This provides `EventTarget` constructor that can inherit for your custom object.
 - This provides an utility that defines properties of attribute listeners (e.g. `obj.onclick`).
