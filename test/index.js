@@ -492,6 +492,20 @@ function doBasicTests() {
 
         assert(result === false)
     })
+
+    it("it should call the listeners with `once` option only one time.", /* @this */ function() {
+        var listener1 = spy()
+        var listener2 = spy()
+        this.target.addEventListener("test", listener1, {once: true})
+        this.target.addEventListener("test", listener2, {once: true})
+        this.target.dispatchEvent(createEvent("test"))
+        this.target.dispatchEvent(createEvent("test"))
+
+        assert(listener1.callCount === 1)
+        assert(listener2.callCount === 1)
+        assert(this.target.removeEventListener("test", listener1) === false)
+        assert(this.target.removeEventListener("test", listener2) === false)
+    })
 }
 
 /**
