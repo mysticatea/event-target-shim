@@ -127,7 +127,6 @@ function doBasicTests() {
         assert(lastEvent.bubbles === false)
         assert(lastEvent.cancelable === false)
         assert(lastEvent.defaultPrevented === false)
-        assert(lastEvent.isTrusted === false)
         assert(lastEvent.timeStamp === event.timeStamp)
         assert(lastEvent.detail === "detail")
         assert(listenerThis === this.target)
@@ -256,7 +255,6 @@ function doBasicTests() {
         assert(lastEvent.bubbles === false)
         assert(lastEvent.cancelable === false)
         assert(lastEvent.defaultPrevented === false)
-        assert(lastEvent.isTrusted === false)
         assert(typeof lastEvent.timeStamp === "number")
         assert(lastEvent.detail === "detail")
     });
@@ -336,7 +334,6 @@ function doBasicTests() {
         assert(lastEvent.bubbles === false)
         assert(lastEvent.cancelable === false)
         assert(lastEvent.defaultPrevented === false)
-        assert(lastEvent.isTrusted === false)
         assert(lastEvent.timeStamp === event.timeStamp)
         assert(lastEvent.detail === "detail")
         assert(listenerThis === listener)
