@@ -233,7 +233,7 @@ function doBasicTests() {
         assert(lastEvent.defaultPrevented === false)
         assert(typeof lastEvent.timeStamp === "number")
         assert(lastEvent.detail === "detail")
-    });
+    })
 
     it("cannot call a class as a function", /* @this */ function() {
         assert.throws(
