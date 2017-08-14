@@ -9,7 +9,7 @@
 // Requirements
 //------------------------------------------------------------------------------
 
-/*globals CustomEvent, document, window */
+/*globals CustomEvent, window */
 
 var assert = require("power-assert")
 var spy = require("spy")
@@ -47,19 +47,6 @@ var IS_INTERFACE_METHODS_ENUMERABLE = (function() {
     return keys.length === 4
 })()
 
-// CustomEvent constructor cannot be used in IE.
-var IS_CUSTOM_EVENT_CONSTRUCTOR_SUPPORTED = (function() {
-    try {
-        new CustomEvent( // eslint-disable-line no-new
-            "test",
-            {bubbles: false, cancelable: false, detail: "test"})
-        return true
-    }
-    catch (_err) {
-        return false
-    }
-})()
-
 //-----------------------------------------------------------------------------
 // Helpers
 //-----------------------------------------------------------------------------
@@ -74,22 +61,11 @@ var IS_CUSTOM_EVENT_CONSTRUCTOR_SUPPORTED = (function() {
  * @returns {Event|object} The created event.
  */
 function createEvent(type, bubbles, cancelable, detail) {
-    if (typeof window.CustomEvent !== "undefined") {
-        var event = new window.CustomEvent(type, {
-            bubbles: Boolean(bubbles),
-            cancelable: Boolean(cancelable)
-        });
-        Object.defineProperty(event, 'detail', { value: detail, configurable: true, writable: false })
-        return event
-    }
-
-    return {
-        type: type,
-        timeStamp: Date.now(),
+    return new CustomEvent(type, {
         bubbles: Boolean(bubbles),
         cancelable: Boolean(cancelable),
-        detail: detail || null,
-    }
+        detail: detail,
+    })
 }
 
 /**
@@ -258,19 +234,6 @@ function doBasicTests() {
         assert(typeof lastEvent.timeStamp === "number")
         assert(lastEvent.detail === "detail")
     });
-
-    // IE is not supported.
-    (IS_CUSTOM_EVENT_CONSTRUCTOR_SUPPORTED ? it : xit)("should work with CustomEvent", /* @this */ function() {
-        var lastEvent = null
-        var event = new CustomEvent("test", {detail: 123})
-        this.target.addEventListener("test", function(e) {
-            lastEvent = e
-        })
-        this.target.dispatchEvent(event)
-
-        assert(lastEvent != null)
-        assert(lastEvent.detail === event.detail)
-    })
 
     it("cannot call a class as a function", /* @this */ function() {
         assert.throws(
