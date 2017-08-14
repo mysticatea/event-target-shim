@@ -74,10 +74,12 @@ var IS_CUSTOM_EVENT_CONSTRUCTOR_SUPPORTED = (function() {
  * @returns {Event|object} The created event.
  */
 function createEvent(type, bubbles, cancelable, detail) {
-    if (typeof document !== "undefined") {
-        var event = document.createEvent("Event")
-        event.initEvent(type, Boolean(bubbles), Boolean(cancelable))
-        event.detail = detail || null
+    if (typeof window.CustomEvent !== "undefined") {
+        var event = new window.CustomEvent(type, {
+            bubbles: Boolean(bubbles),
+            cancelable: Boolean(cancelable)
+        });
+        Object.defineProperty(event, 'detail', { value: detail, configurable: true, writable: false })
         return event
     }
 
