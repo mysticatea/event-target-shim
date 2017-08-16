@@ -1,5 +1,5 @@
 {
-    "extends": ["mysticatea/es5", "mysticatea/node"],
+    "_extends": ["mysticatea/es5", "mysticatea/node"],
     "globals": {
     },
     "rules": {
