@@ -1,8 +1,20 @@
 {
-    "extends": ["mysticatea/es5", "mysticatea/node"],
+    "extends": ["mysticatea", "mysticatea/modules"],
+    "plugins": [
+        "node"
+    ],
     "globals": {
+        "console": false,
+        "window": false
     },
     "rules": {
-        "no-param-reassign": ["error", {"props": false}]
+        "valid-jsdoc": "off",
+        // `for-of` and `typeof x === "object"` have big cost after babel-transpiling.
+        "no-restricted-syntax": ["error", "ClassDeclaration,ClassExpression", "ForOfStatement", "BinaryExpression[left.operator='typeof'][right.value='object']"],
+        "prefer-rest-params": "off",
+        "prefer-spread": "off",
+        "mysticatea/prefer-for-of": "off",
+
+        "node/no-unsupported-features": ["error", {"ignores": ["modules"]}]
     }
 }

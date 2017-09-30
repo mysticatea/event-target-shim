@@ -3,66 +3,37 @@
  * @copyright 2015 Toru Nagashima. All rights reserved.
  * See LICENSE file in root directory for full license.
  */
-"use strict"
 
-//------------------------------------------------------------------------------
-// Requirements
-//------------------------------------------------------------------------------
+// I could not use `assert` module because of https://github.com/defunctzombie/node-util/issues/10
+// I could not use `power-assert` module because of `isImportDefaultSpecifier` not found error.
+import chai from "chai"
+const assert = chai.assert
+
+// `spy/index.js` has `require("module")`, so it's problem in karma.
+import spy from "spy/lib/spy"
+
+import EventTarget from "../src/event-target.mjs"
 
 /*globals CustomEvent, document, window */
 
-var assert = require("power-assert")
-var spy = require("spy")
-var EventTarget = require("../lib/event-target")
-
-//------------------------------------------------------------------------------
-// Constants
-//------------------------------------------------------------------------------
-
 // To check working on Node.js
-var HAS_EVENT_TARGET_INTERFACE = (
+const HAS_EVENT_TARGET_INTERFACE = (
     typeof window !== "undefined" &&
     typeof window.EventTarget !== "undefined"
 )
 
-// "enumerable" flag cannot be overridden in V8 and IE.
-// And the interface methods are enumerable in Blink.
-// Firefox is perfect.
-// See Also: https://code.google.com/p/v8/issues/detail?id=705
-var IS_INTERFACE_METHODS_ENUMERABLE = (function() {
-    var obj = Object.create(
-        {test: 0},
-        {test: {value: 0, enumerable: false}}
-    )
-    var keys = []
-    var key = 0
-    for (key in obj) {
-        keys.push(key)
-    }
-    if (HAS_EVENT_TARGET_INTERFACE) {
-        for (key in window.EventTarget.prototype) {
-            keys.push(key)
-        }
-    }
-    return keys.length === 4
-})()
-
 // CustomEvent constructor cannot be used in IE.
-var IS_CUSTOM_EVENT_CONSTRUCTOR_SUPPORTED = (function() {
+const IS_CUSTOM_EVENT_CONSTRUCTOR_SUPPORTED = (function() {
     try {
         new CustomEvent( // eslint-disable-line no-new
             "test",
-            {bubbles: false, cancelable: false, detail: "test"})
+            { bubbles: false, cancelable: false, detail: "test" })
         return true
     }
     catch (_err) {
         return false
     }
 })()
-
-//-----------------------------------------------------------------------------
-// Helpers
-//-----------------------------------------------------------------------------
 
 /**
  * The helper to create an event.
@@ -75,14 +46,14 @@ var IS_CUSTOM_EVENT_CONSTRUCTOR_SUPPORTED = (function() {
  */
 function createEvent(type, bubbles, cancelable, detail) {
     if (typeof document !== "undefined") {
-        var event = document.createEvent("Event")
+        const event = document.createEvent("Event")
         event.initEvent(type, Boolean(bubbles), Boolean(cancelable))
         event.detail = detail || null
         return event
     }
 
     return {
-        type: type,
+        type,
         timeStamp: Date.now(),
         bubbles: Boolean(bubbles),
         cancelable: Boolean(cancelable),
@@ -97,21 +68,26 @@ function createEvent(type, bubbles, cancelable, detail) {
 function doBasicTests() {
     (HAS_EVENT_TARGET_INTERFACE ? it : xit)("should be instanceof `window.EventTarget`.", /* @this */ function() {
         assert(this.target instanceof window.EventTarget)
-    });
-
-    (HAS_EVENT_TARGET_INTERFACE ? it : xit)("should not equal `EventTarget` and `window.EventTarget`.", /* @this */ function() {
+    })
+    ;(HAS_EVENT_TARGET_INTERFACE ? it : xit)("should not equal `EventTarget` and `window.EventTarget`.", () => {
         assert(EventTarget !== window.EventTarget)
     })
 
     it("should call registered listeners on called `dispatchEvent()`.", /* @this */ function() {
-        var lastEvent = null
-        var listenerThis = null
-        var listener = spy(function(e) {
+        let lastEvent = null
+        let eventPhase = 0
+        let currentTarget = null
+        let composedPath = null
+        let listenerThis = null
+        const listener = spy(function(e) {
             lastEvent = e
+            eventPhase = e.eventPhase
+            currentTarget = e.currentTarget
+            composedPath = e.composedPath()
             listenerThis = this // eslint-disable-line no-invalid-this
         })
-        var listener2 = spy()
-        var event = createEvent("test", false, false, "detail")
+        const listener2 = spy()
+        const event = createEvent("test", false, false, "detail")
         this.target.addEventListener("test", listener)
         this.target.addEventListener("test", listener2)
         this.target.dispatchEvent(event)
@@ -120,22 +96,31 @@ function doBasicTests() {
         assert(listener2.callCount === 1)
         assert(lastEvent.type === "test")
         assert(lastEvent.target === this.target)
-        assert(lastEvent.currentTarget === this.target)
-        assert(lastEvent.eventPhase === 2)
+        assert(lastEvent.currentTarget === null)
+        assert(currentTarget === this.target)
+        assert(lastEvent.eventPhase === 0)
+        assert(eventPhase === 2)
         assert(lastEvent.bubbles === false)
         assert(lastEvent.cancelable === false)
         assert(lastEvent.defaultPrevented === false)
         assert(lastEvent.isTrusted === false)
         assert(lastEvent.timeStamp === event.timeStamp)
         assert(lastEvent.detail === "detail")
+        assert(lastEvent.composedPath().length === 0)
+        assert(composedPath.length === 1)
+        assert(composedPath[0] === this.target)
+        assert(lastEvent.NONE === 0)
+        assert(lastEvent.CAPTURING_PHASE === 1)
+        assert(lastEvent.AT_TARGET === 2)
+        assert(lastEvent.BUBBLING_PHASE === 3)
         assert(listenerThis === this.target)
         assert(this.target.removeEventListener("test", listener2))
         assert(this.target.removeEventListener("test", listener))
     })
 
     it("should not call removed listeners.", /* @this */ function() {
-        var listener = spy()
-        var event = createEvent("test")
+        const listener = spy()
+        const event = createEvent("test")
         this.target.addEventListener("test", listener)
         this.target.removeEventListener("test", listener)
         this.target.dispatchEvent(event)
@@ -144,8 +129,8 @@ function doBasicTests() {
     })
 
     it("it should not allow duplicate in listeners.", /* @this */ function() {
-        var listener = spy()
-        var event = createEvent("test")
+        const listener = spy()
+        const event = createEvent("test")
         this.target.addEventListener("test", listener)
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(event)
@@ -156,8 +141,8 @@ function doBasicTests() {
     })
 
     it("should allow duplicate in listeners if those capture flag are different.", /* @this */ function() {
-        var listener = spy()
-        var event = createEvent("test")
+        const listener = spy()
+        const event = createEvent("test")
         this.target.addEventListener("test", listener, true)
         this.target.addEventListener("test", listener, false)
         this.target.dispatchEvent(event)
@@ -168,8 +153,8 @@ function doBasicTests() {
     })
 
     it("should not call registered listeners if its type is different.", /* @this */ function() {
-        var listener = spy()
-        var event = createEvent("test")
+        const listener = spy()
+        const event = createEvent("test")
         this.target.addEventListener("test2", listener)
         this.target.dispatchEvent(event)
 
@@ -177,60 +162,85 @@ function doBasicTests() {
     })
 
     it("a result of `dispatchEvent()` should be true if hadn't canceled by listeners.", /* @this */ function() {
-        var listener = spy()
-        var event = createEvent("test")
+        const listener = spy()
+        const event = createEvent("test")
         this.target.addEventListener("test", listener)
-        var result = this.target.dispatchEvent(event)
+        const result = this.target.dispatchEvent(event)
 
         assert(result === true)
     })
 
     it("a result of `dispatchEvent()` should be false if had canceled by listeners.", /* @this */ function() {
-        var listener = spy(function(e) {
-            return e.preventDefault()
-        })
-        var event = createEvent("test", false, true)
+        const listener = spy(e => e.preventDefault())
+        const event = createEvent("test", false, true)
         this.target.addEventListener("test", listener)
-        var result = this.target.dispatchEvent(event)
+        const result = this.target.dispatchEvent(event)
 
         assert(result === false)
     })
 
-    it("should be not possible to cancel if the event cannot cancel.", /* @this */ function() {
-        var listener = spy(function(e) {
-            return e.preventDefault()
-        })
-        var event = createEvent("test")
+    it("'event.preventDefault' should be called when 'preventDefault' is called.", /* @this */ function() {
+        const listener = spy(e => e.preventDefault())
+        const event = createEvent("test", false, true)
+        event.preventDefault = spy()
+
         this.target.addEventListener("test", listener)
-        var result = this.target.dispatchEvent(event)
+        this.target.dispatchEvent(event)
+
+        assert(event.preventDefault.called)
+    })
+
+    it("should be not possible to cancel if the event cannot cancel.", /* @this */ function() {
+        const listener = spy(e => e.preventDefault())
+        const event = createEvent("test")
+        this.target.addEventListener("test", listener)
+        const result = this.target.dispatchEvent(event)
 
         assert(result === true)
     })
 
+    it("'event.stopPropagation' should be called when 'stopPropagation' is called.", /* @this */ function() {
+        const listener = spy(e => e.stopPropagation())
+        const event = createEvent("test", false, true)
+        event.stopPropagation = spy()
+
+        this.target.addEventListener("test", listener)
+        this.target.dispatchEvent(event)
+
+        assert(event.stopPropagation.called)
+    })
+
     it("should stop calling registered listeners immediately when called `e.stopImmediatePropagation()` by a listener.", /* @this */ function() {
-        var listener1 = spy(function(e) {
-            return e.stopImmediatePropagation()
-        })
-        var listener2 = spy()
-        var event = createEvent("test")
+        const listener1 = spy(e => e.stopImmediatePropagation())
+        const listener2 = spy()
+        const event = createEvent("test")
         this.target.addEventListener("test", listener1)
         this.target.addEventListener("test", listener2)
-        var result = this.target.dispatchEvent(event)
+        const result = this.target.dispatchEvent(event)
 
         assert(listener1.callCount === 1)
         assert(listener2.called === false)
         assert(result === true)
     })
 
+    it("'event.stopImmediatePropagation' should be called when 'stopImmediatePropagation' is called.", /* @this */ function f() {
+        const listener = spy(e => e.stopImmediatePropagation())
+        const event = createEvent("test", false, true)
+        event.stopImmediatePropagation = spy()
+
+        this.target.addEventListener("test", listener)
+        this.target.dispatchEvent(event)
+
+        assert(event.stopImmediatePropagation.called)
+    })
+
     it("should call registered listeners if a listener removed me.", /* @this */ function() {
-        var listener1 = spy(function() {
-            return this.target.removeEventListener(listener1)
-        }.bind(this))
-        var listener2 = spy()
-        var event = createEvent("test")
+        const listener1 = spy(() => this.target.removeEventListener(listener1))
+        const listener2 = spy()
+        const event = createEvent("test")
         this.target.addEventListener("test", listener1)
         this.target.addEventListener("test", listener2)
-        var result = this.target.dispatchEvent(event)
+        const result = this.target.dispatchEvent(event)
 
         assert(listener1.callCount === 1)
         assert(listener2.callCount === 1)
@@ -238,32 +248,34 @@ function doBasicTests() {
     })
 
     it("should be possible to call `dispatchEvent()` with a plain object.", /* @this */ function() {
-        var lastEvent = null
-        var listener = spy(function(e) {
+        let lastEvent = null
+        let currentTarget = null
+        const listener = spy(e => {
             lastEvent = e
+            currentTarget = e.currentTarget
         })
-        var event = {type: "test", detail: "detail"}
+        const event = { type: "test", detail: "detail" }
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(event)
 
         assert(listener.callCount === 1)
         assert(lastEvent.type === "test")
         assert(lastEvent.target === this.target)
-        assert(lastEvent.currentTarget === this.target)
-        assert(lastEvent.eventPhase === 2)
+        assert(currentTarget === this.target)
+        assert(lastEvent.eventPhase === 0)
         assert(lastEvent.bubbles === false)
         assert(lastEvent.cancelable === false)
         assert(lastEvent.defaultPrevented === false)
         assert(lastEvent.isTrusted === false)
         assert(typeof lastEvent.timeStamp === "number")
         assert(lastEvent.detail === "detail")
-    });
+    })
 
     // IE is not supported.
-    (IS_CUSTOM_EVENT_CONSTRUCTOR_SUPPORTED ? it : xit)("should work with CustomEvent", /* @this */ function() {
-        var lastEvent = null
-        var event = new CustomEvent("test", {detail: 123})
-        this.target.addEventListener("test", function(e) {
+    ;(IS_CUSTOM_EVENT_CONSTRUCTOR_SUPPORTED ? it : xit)("should work with CustomEvent", /* @this */ function() {
+        let lastEvent = null
+        const event = new CustomEvent("test", { detail: 123 })
+        this.target.addEventListener("test", (e) => {
             lastEvent = e
         })
         this.target.dispatchEvent(event)
@@ -272,9 +284,9 @@ function doBasicTests() {
         assert(lastEvent.detail === event.detail)
     })
 
-    it("cannot call a class as a function", /* @this */ function() {
+    it("cannot call a class as a function", () => {
         assert.throws(
-            function() {
+            () => {
                 EventTarget()
             },
             "Cannot call a class as a function"
@@ -288,49 +300,51 @@ function doBasicTests() {
 
     it("should throw a TypeError if the listener is neither of a function nor an object with \"handleEvent\" method", /* @this */ function() {
         assert.throws(
-            function() {
+            () => {
                 this.target.addEventListener("test", "listener")
-            }.bind(this),
+            },
             TypeError
         )
         assert.throws(
-            function() {
+            () => {
                 this.target.addEventListener("test", false)
-            }.bind(this),
+            },
             TypeError
         )
         assert.throws(
-            function() {
+            () => {
                 this.target.addEventListener("test", 0)
-            }.bind(this),
+            },
             TypeError
         )
         assert.throws(
-            function() {
+            () => {
                 this.target.addEventListener("test", "")
-            }.bind(this),
+            },
             TypeError
         )
     })
 
     it("should allow an object which has \"handleEvent\" method as a listener.", /* @this */ function() {
-        var lastEvent = null
-        var listenerThis = null
-        var listener = {
+        let lastEvent = null
+        let currentTarget = null
+        let listenerThis = null
+        const listener = {
             handleEvent: spy(function(e) {
                 lastEvent = e
+                currentTarget = e.currentTarget
                 listenerThis = this // eslint-disable-line no-invalid-this
             }),
         }
-        var event = createEvent("test", false, false, "detail")
+        const event = createEvent("test", false, false, "detail")
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(event)
 
         assert(listener.handleEvent.callCount === 1)
         assert(lastEvent.type === "test")
         assert(lastEvent.target === this.target)
-        assert(lastEvent.currentTarget === this.target)
-        assert(lastEvent.eventPhase === 2)
+        assert(currentTarget === this.target)
+        assert(lastEvent.eventPhase === 0)
         assert(lastEvent.bubbles === false)
         assert(lastEvent.cancelable === false)
         assert(lastEvent.defaultPrevented === false)
@@ -342,8 +356,8 @@ function doBasicTests() {
     })
 
     it("should not call removed listeners (an object with \"handleEvent\" method).", /* @this */ function() {
-        var listener = {handleEvent: spy()}
-        var event = createEvent("test")
+        const listener = { handleEvent: spy() }
+        const event = createEvent("test")
         this.target.addEventListener("test", listener)
         this.target.removeEventListener("test", listener)
         this.target.dispatchEvent(event)
@@ -352,11 +366,11 @@ function doBasicTests() {
     })
 
     it("should accept an object without \"handleEvent\" method.", /* @this */ function() {
-        var listener = {}
+        const listener = {}
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(createEvent("test"))
 
-        var handleEvent = listener.handleEvent = spy()
+        const handleEvent = listener.handleEvent = spy()
         this.target.dispatchEvent(createEvent("test"))
 
         listener.handleEvent = {}
@@ -369,7 +383,7 @@ function doBasicTests() {
     })
 
     it("should not call \"handleEvent\" method if the object is a function.", /* @this */ function() {
-        var listener = spy()
+        const listener = spy()
         listener.handleEvent = spy()
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(createEvent("test"))
@@ -379,16 +393,16 @@ function doBasicTests() {
     })
 
     it("should allow a listener to be an object with a handleEvent method and have this set correctly", /* @this */ function() {
-        var listener = {
+        const listener = {
             __proto__: {
-                handleEvent: function() {
+                handleEvent() {
                     this.complete()
                 },
                 complete: spy(),
             },
         }
 
-        var event = createEvent("test")
+        const event = createEvent("test")
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(event)
 
@@ -396,16 +410,16 @@ function doBasicTests() {
     })
 
     it("should not call removed object listeners.", /* @this */ function() {
-        var listener = {
+        const listener = {
             __proto__: {
-                handleEvent: function() {
+                handleEvent() {
                     this.complete()
                 },
                 complete: spy(),
             },
         }
 
-        var event = createEvent("test")
+        const event = createEvent("test")
         this.target.addEventListener("test", listener)
         this.target.removeEventListener("test", listener)
         this.target.dispatchEvent(event)
@@ -414,8 +428,8 @@ function doBasicTests() {
     })
 
     it("it should call the listener with `once` option only one time.", /* @this */ function() {
-        var listener = spy()
-        this.target.addEventListener("test", listener, {once: true})
+        const listener = spy()
+        this.target.addEventListener("test", listener, { once: true })
         this.target.dispatchEvent(createEvent("test"))
         this.target.dispatchEvent(createEvent("test"))
 
@@ -424,8 +438,8 @@ function doBasicTests() {
     })
 
     it("should allow duplicate listeners if those capture flag are different (`{}` and `true`).", /* @this */ function() {
-        var listener = spy()
-        var event = createEvent("test")
+        const listener = spy()
+        const event = createEvent("test")
         this.target.addEventListener("test", listener, {})
         this.target.addEventListener("test", listener, true)
         this.target.dispatchEvent(event)
@@ -436,9 +450,9 @@ function doBasicTests() {
     })
 
     it("should allow duplicate listeners if those capture flag are different (`{capture: true}` and `false`).", /* @this */ function() {
-        var listener = spy()
-        var event = createEvent("test")
-        this.target.addEventListener("test", listener, {capture: true})
+        const listener = spy()
+        const event = createEvent("test")
+        this.target.addEventListener("test", listener, { capture: true })
         this.target.addEventListener("test", listener, false)
         this.target.dispatchEvent(event)
 
@@ -448,56 +462,85 @@ function doBasicTests() {
     })
 
     it("should disallow duplicate listeners if those capture flag are same (`{}` and `false`).", /* @this */ function() {
-        var listener = spy()
-        var event = createEvent("test")
+        const listener = spy()
+        const event = createEvent("test")
         this.target.addEventListener("test", listener, {})
         this.target.addEventListener("test", listener, false)
         this.target.dispatchEvent(event)
 
         assert(listener.callCount === 1)
-        assert(this.target.removeEventListener("test", listener, {capture: false}))
-        assert(this.target.removeEventListener("test", listener, {capture: false}) === false)
+        assert(this.target.removeEventListener("test", listener, { capture: false }))
+        assert(this.target.removeEventListener("test", listener, { capture: false }) === false)
     })
 
     it("should disallow duplicate listeners if those capture flag are same (`{capture: true}` and `true`).", /* @this */ function() {
-        var listener = spy()
-        var event = createEvent("test")
-        this.target.addEventListener("test", listener, {capture: true})
+        const listener = spy()
+        const event = createEvent("test")
+        this.target.addEventListener("test", listener, { capture: true })
         this.target.addEventListener("test", listener, true)
         this.target.dispatchEvent(event)
 
         assert(listener.callCount === 1)
-        assert(this.target.removeEventListener("test", listener, {capture: true}))
-        assert(this.target.removeEventListener("test", listener, {capture: true}) === false)
+        assert(this.target.removeEventListener("test", listener, { capture: true }))
+        assert(this.target.removeEventListener("test", listener, { capture: true }) === false)
     })
 
     it("a result of `dispatchEvent()` should be true even if had canceled by passive listeners.", /* @this */ function() {
-        var listener = spy(function(e) {
-            return e.preventDefault()
-        })
-        var event = createEvent("test", false, true)
-        this.target.addEventListener("test", listener, {passive: true})
-        var result = this.target.dispatchEvent(event)
+        const listener = spy(e => e.preventDefault())
+        const event = createEvent("test", false, true)
+        this.target.addEventListener("test", listener, { passive: true })
+        const result = this.target.dispatchEvent(event)
 
         assert(result === true)
     })
 
     it("a result of `dispatchEvent()` should be false even if had canceled by non-passive listeners.", /* @this */ function() {
-        var listener = spy(function(e) {
-            return e.preventDefault()
-        })
-        var event = createEvent("test", false, true)
-        this.target.addEventListener("test", listener, {passive: false})
-        var result = this.target.dispatchEvent(event)
+        const listener = spy(e => e.preventDefault())
+        const event = createEvent("test", false, true)
+        this.target.addEventListener("test", listener, { passive: false })
+        const result = this.target.dispatchEvent(event)
 
         assert(result === false)
     })
 
+    it("'event.preventDefault` should not be called if had canceled by passive listeners.", /* @this */ function() {
+        const listener = spy(e => e.preventDefault())
+        const event = createEvent("test", false, true)
+        event.preventDefault = spy()
+
+        this.target.addEventListener("test", listener, { passive: true })
+        this.target.dispatchEvent(event)
+
+        assert(event.preventDefault.called === false)
+    })
+
+    it("'event.stopPropagation` should be called even if had called by passive listeners.", /* @this */ function() {
+        const listener = spy(e => e.stopPropagation())
+        const event = createEvent("test", false, true)
+        event.stopPropagation = spy()
+
+        this.target.addEventListener("test", listener, { passive: true })
+        this.target.dispatchEvent(event)
+
+        assert(event.stopPropagation.called)
+    })
+
+    it("'event.stopImmediatePropagation` should be called even if had called by passive listeners.", /* @this */ function() {
+        const listener = spy(e => e.stopImmediatePropagation())
+        const event = createEvent("test", false, true)
+        event.stopImmediatePropagation = spy()
+
+        this.target.addEventListener("test", listener, { passive: true })
+        this.target.dispatchEvent(event)
+
+        assert(event.stopImmediatePropagation.called)
+    })
+
     it("it should call the listeners with `once` option only one time.", /* @this */ function() {
-        var listener1 = spy()
-        var listener2 = spy()
-        this.target.addEventListener("test", listener1, {once: true})
-        this.target.addEventListener("test", listener2, {once: true})
+        const listener1 = spy()
+        const listener2 = spy()
+        this.target.addEventListener("test", listener1, { once: true })
+        this.target.addEventListener("test", listener2, { once: true })
         this.target.dispatchEvent(createEvent("test"))
         this.target.dispatchEvent(createEvent("test"))
 
@@ -505,6 +548,66 @@ function doBasicTests() {
         assert(listener2.callCount === 1)
         assert(this.target.removeEventListener("test", listener1) === false)
         assert(this.target.removeEventListener("test", listener2) === false)
+    })
+
+    it("should can get a value from original event property even if the property is a getter of prototype.", /* @this */ function() {
+        let eventThis = null
+        let lastValue = null
+        const proto = {
+            get value() {
+                eventThis = this
+                return 0
+            },
+        }
+        const event = Object.create(proto)
+        event.type = "test"
+
+        this.target.addEventListener("test", (e) => (lastValue = e.value))
+        this.target.dispatchEvent(event)
+
+        assert(eventThis === event)
+        assert(lastValue === 0)
+    })
+
+    it("should can set a value to original event property even if the property is a setter of prototype.", /* @this */ function() {
+        let eventThis = null
+        let lastValue = null
+        const proto = {
+            get value() {
+                return 0
+            },
+            set value(value) {
+                eventThis = this
+                lastValue = value
+            },
+        }
+        const event = Object.create(proto)
+        event.type = "test"
+
+        this.target.addEventListener("test", (e) => (e.value = 10))
+        this.target.dispatchEvent(event)
+
+        assert(eventThis === event)
+        assert(lastValue === 10)
+    })
+
+    it("should can call a method of original event even if the property is a method of prototype.", /* @this */ function() {
+        let eventThis = null
+        let lastValue = null
+        const proto = {
+            foo(value) {
+                eventThis = this
+                lastValue = value
+            },
+        }
+        const event = Object.create(proto)
+        event.type = "test"
+
+        this.target.addEventListener("test", (e) => (e.foo(100)))
+        this.target.dispatchEvent(event)
+
+        assert(eventThis === event)
+        assert(lastValue === 100)
     })
 }
 
@@ -515,20 +618,24 @@ function doBasicTests() {
 function doAttributeListenerTests() {
     it("should properties of attribute listener are null by default.", /* @this */ function() {
         assert(this.target.ontest === null)
-    });
+    })
 
-    (IS_INTERFACE_METHODS_ENUMERABLE ? xit : it)("should properties of attribute listener are enumerable.", /* @this */ function() {
-        var keys = []
-        for (var key in this.target) {
+    it("should properties of attribute listener are enumerable.", /* @this */ function() {
+        const expectedKeys = ["addEventListener", "removeEventListener", "dispatchEvent", "ontest", "onhello"]
+        const keys = []
+        for (const key in this.target) {
             keys.push(key)
         }
 
-        assert.deepEqual(keys, ["ontest", "onhello"])
+        assert(keys.length === expectedKeys.length)
+        for (let i = 0; i < keys.length; ++i) {
+            assert(expectedKeys.indexOf(keys[i]) !== -1, `Found an unknown key '${keys[i]}'`)
+        }
     })
 
     it("should call attribute listeners when called `dispatchEvent()`.", /* @this */ function() {
-        var listener = spy()
-        var event = createEvent("test")
+        const listener = spy()
+        const event = createEvent("test")
         this.target.ontest = listener
         this.target.dispatchEvent(event)
 
@@ -537,8 +644,8 @@ function doAttributeListenerTests() {
     })
 
     it("should not call removed listeners.", /* @this */ function() {
-        var listener = spy()
-        var event = createEvent("test")
+        const listener = spy()
+        const event = createEvent("test")
         this.target.ontest = listener
         this.target.ontest = null
         this.target.dispatchEvent(event)
@@ -548,8 +655,8 @@ function doAttributeListenerTests() {
     })
 
     it("should not allow duplicate in listeners.", /* @this */ function() {
-        var listener = spy()
-        var event = createEvent("test")
+        const listener = spy()
+        const event = createEvent("test")
         this.target.ontest = listener
         this.target.ontest = listener
         this.target.dispatchEvent(event)
@@ -559,8 +666,8 @@ function doAttributeListenerTests() {
     })
 
     it("should allow duplicate in listeners if these kind is different.", /* @this */ function() {
-        var listener = spy()
-        var event = createEvent("test")
+        const listener = spy()
+        const event = createEvent("test")
         this.target.addEventListener("test", listener, false)
         this.target.ontest = listener
         this.target.addEventListener("test", listener, true)
@@ -589,7 +696,7 @@ function doAttributeListenerTests() {
     })
 
     it("should store but not call if the listener is an object.", /* @this */ function() {
-        var listener = {handleEvent: spy()}
+        const listener = { handleEvent: spy() }
 
         this.target.ontest = listener
         this.target.dispatchEvent(createEvent("test"))
@@ -599,7 +706,7 @@ function doAttributeListenerTests() {
     })
 
     it("should handle a non object as null.", /* @this */ function() {
-        var listener = {}
+        const listener = {}
 
         this.target.ontest = listener
         assert(this.target.ontest === listener)
@@ -613,7 +720,7 @@ function doAttributeListenerTests() {
 // Tests
 //-----------------------------------------------------------------------------
 
-describe("EventTarget:", function() {
+describe("EventTarget:", () => {
     /**
      * Use extended class to test.
      * @constructor
@@ -621,6 +728,7 @@ describe("EventTarget:", function() {
     function TestTarget() {
         EventTarget.call(this)
     }
+
     TestTarget.prototype = Object.create(EventTarget.prototype, {
         constructor: {
             value: TestTarget,
@@ -640,21 +748,12 @@ describe("EventTarget:", function() {
     doBasicTests()
 })
 
-describe("EventTarget with attribute listeners:", function() {
+describe("EventTarget with attribute listeners:", () => {
     /**
      * Use extended class to test.
      * @constructor
      */
-    function TestTarget() {
-        EventTarget.call(this)
-    }
-    TestTarget.prototype = Object.create(EventTarget("test", "hello").prototype, {
-        constructor: {
-            value: TestTarget,
-            configurable: true,
-            writable: true,
-        },
-    })
+    const TestTarget = EventTarget("test", "hello")
 
     // Initialize a test target.
     beforeEach(/* @this */ function() {
@@ -668,22 +767,12 @@ describe("EventTarget with attribute listeners:", function() {
     doAttributeListenerTests()
 })
 
-describe("EventTarget with an array of attribute listeners:", function() {
+describe("EventTarget with an array of attribute listeners:", () => {
     /**
      * Use extended class to test.
      * @constructor
      */
-    function TestTarget() {
-        EventTarget.call(this)
-    }
-    var events = ["test", "hello"]
-    TestTarget.prototype = Object.create(EventTarget(events).prototype, {
-        constructor: {
-            value: TestTarget,
-            configurable: true,
-            writable: true,
-        },
-    })
+    const TestTarget = EventTarget(["test", "hello"])
 
     // Initialize a test target.
     beforeEach(/* @this */ function() {

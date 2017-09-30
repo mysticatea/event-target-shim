@@ -1,12 +1,8 @@
 /**
  * @author Toru Nagashima <https://github.com/mysticatea>
- * @copyright 2015 Toru Nagashima. All rights reserved.
+ * @copyright 2017 Toru Nagashima. All rights reserved.
  * See LICENSE file in root directory for full license.
  */
-'use strict';
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
 /**
  * @typedef {object} PrivateData
  * @property {EventTarget} eventTarget The event target.
@@ -746,11 +742,6 @@ if (typeof window !== "undefined" && typeof window.EventTarget !== "undefined") 
     Object.setPrototypeOf(EventTarget.prototype, window.EventTarget.prototype);
 }
 
-exports.defineEventAttribute = defineEventAttribute;
-exports.EventTarget = EventTarget;
-exports['default'] = EventTarget;
-
-module.exports = EventTarget
-module.exports.EventTarget = module.exports["default"] = EventTarget
-module.exports.defineEventAttribute = defineEventAttribute
-//# sourceMappingURL=event-target-shim.js.map
+export { defineEventAttribute, EventTarget };
+export default EventTarget;
+//# sourceMappingURL=event-target-shim.mjs.map

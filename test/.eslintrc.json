@@ -1,5 +1,5 @@
 {
-  "extends": "mysticatea/mocha",
+  "extends": ["mysticatea/mocha"],
   "rules": {
     // To use `class TestTarget extends EventTarget("test") {}`
     "new-cap": 0
