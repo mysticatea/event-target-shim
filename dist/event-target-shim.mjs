@@ -514,12 +514,12 @@ function defineEventAttributeDescriptor(eventName) {
 
 /**
  * Define an event attribute (e.g. `eventTarget.onclick`).
- * @param {object} eventTarget The event target to define an event attrbite.
+ * @param {Object} eventTargetPrototype The event target prototype to define an event attrbite.
  * @param {string} eventName The event name to define.
  * @returns {void}
  */
-function defineEventAttribute(eventTarget, eventName) {
-    Object.defineProperty(eventTarget, `on${eventName}`, defineEventAttributeDescriptor(eventName));
+function defineEventAttribute(eventTargetPrototype, eventName) {
+    Object.defineProperty(eventTargetPrototype, `on${eventName}`, defineEventAttributeDescriptor(eventName));
 }
 
 /**
