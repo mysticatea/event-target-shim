@@ -12,179 +12,203 @@ An implementation of [WHATWG EventTarget interface](https://dom.spec.whatwg.org/
 - This provides an utility that defines properties of attribute listeners (e.g. `obj.onclick`).
 
 ```js
-// The prototype of this class has getters and setters of `onmessage` and `onerror`.
-class Foo extends EventTarget("message", "error") {
-    //...
-}
-```
+import {EventTarget, defineEventAttribute} from "event-target-shim"
 
-## Installation
-
-```
-npm install --save event-target-shim
-```
-
-Or download from `dist` directory.
-
-## Usage
-
-### Basic
-
-```js
-//-----------------------------------------------------------------------------
-// import (with browserify, webpack, etc...).
-const EventTarget = require("event-target-shim");
-
-//-----------------------------------------------------------------------------
-// define a custom type.
 class Foo extends EventTarget {
+    // ...
 }
 
-//-----------------------------------------------------------------------------
-// add event listeners.
-let foo = new Foo();
-foo.addEventListener("foo", event => {
-    console.log(event.hello);
-});
-foo.addEventListener("foo", event => {
-    if (event.hello !== "hello") {
-        // event implements Event interface.
-        event.preventDefault();
+// Define `foo.onhello` property.
+defineEventAttribute(Foo.prototype, "hello")
+
+// Use
+const foo = new Foo()
+foo.addEventListener("hello", e => console.log("hello", e))
+foo.onhello = e => console.log("onhello:", e)
+foo.dispatchEvent(new CustomEvent("hello"))
+```
+
+## 💿 Installation
+
+Use [npm](https://www.npmjs.com/) to install then use a bundler.
+
+```
+npm install event-target-shim
+```
+
+Or download from [`dist` directory](./dist).
+
+- [dist/event-target-shim.mjs](dist/event-target-shim.mjs) ... ES modules version.
+- [dist/event-target-shim.js](dist/event-target-shim.js) ... Common JS version.
+- [dist/event-target-shim.umd.js](dist/event-target-shim.umd.js) ... UMD (Universal Module Definition) version. This is transpiled by [Babel](https://babeljs.io/) for IE 11.
+
+## 📖 Usage
+
+```js
+import {EventTarget, defineEventAttribute} from "event-target-shim"
+// or
+const {EventTarget, defineEventAttribute} = require("event-target-shim")
+
+// or UMD version defines a global variable:
+const {EventTarget, defineEventAttribute} = window.EventTargetShim
+```
+
+### EventTarget
+
+> https://dom.spec.whatwg.org/#interface-eventtarget
+
+#### eventTarget.addEventListener(type, callback, options)
+
+Register an event listener.
+
+- `type` is a string. This is the event name to register.
+- `callback` is a function. This is the event listener to register.
+- `options` is a boolean or an object `{ capture?: boolean, passive?: boolean, once?: boolean }`. If this is a boolean, it's same meaning as `{ capture: options }`.
+    - `capture` is the flag to register the event listener for capture phase.
+    - `passive` is the flag to ignore `event.preventDefault()` method in the event listener.
+    - `once` is the flag to remove the event listener automatically after the first call.
+
+#### eventTarget.removeEventListener(type, callback, options)
+
+Unregister an event listener.
+
+- `type` is a string. This is the event name to unregister.
+- `callback` is a function. This is the event listener to unregister.
+- `options` is a boolean or an object `{ capture?: boolean }`. If this is a boolean, it's same meaning as `{ capture: options }`.
+    - `capture` is the flag to register the event listener for capture phase.
+
+#### eventTarget.dispatchEvent(event)
+
+Dispatch an event.
+
+- `event` is a [Event](https://dom.spec.whatwg.org/#event) object or an object `{ type: string, [key: string]: any }`. The latter is non-standard but useful. In both cases, listeners receive the event as implementing [Event](https://dom.spec.whatwg.org/#event) interface.
+
+### defineEventAttribute(proto, type)
+
+Define an event attribute (e.g. `onclick`) to `proto`. This is non-standard.
+
+- `proto` is an object (assuming it's a prototype object). This function defines a getter/setter pair for the event attribute.
+- `type` is a string. This is the event name to define.
+
+For example:
+
+```js
+class AbortSignal extends EventTarget {
+    constructor() {
+        this.aborted = false
     }
-});
-
-//-----------------------------------------------------------------------------
-// dispatch an event.
-let event = document.createEvent("CustomEvent");
-event.initCustomEvent("foo", /*bubbles*/ false, /*cancelable*/ false, /*detail*/ null);
-event.hello = "hello";
-foo.dispatchEvent(event);
-
-//-----------------------------------------------------------------------------
-// dispatch an event simply (non standard).
-foo.dispatchEvent({type: "foo", hello: "hello"});
-
-//-----------------------------------------------------------------------------
-// dispatch a cancelable event.
-if (!foo.dispatchEvent({type: "foo", cancelable: true, hello: "hey"})) {
-    console.log("defaultPrevented");
 }
-
-//-----------------------------------------------------------------------------
-// If `window.EventTarget` exists, `EventTarget` inherits from `window.EventTarget`.
-if (foo instanceof window.EventTarget) {
-    console.log("yay!");
-}
+// Define `onabort` property.
+defineEventAttribute(AbortSignal.prototype, "abort")
 ```
 
-### The Extension for Attribute Listeners
+### EventTarget(types)
+
+Define a custom `EventTarget` class with event attributes. This is non-standard.
+
+- `types` is a string or an array of strings. This is the event name to define.
+
+For example:
 
 ```js
-//-----------------------------------------------------------------------------
-// import (with browserify, webpack, etc...).
-const EventTarget = require("event-target-shim");
-
-//-----------------------------------------------------------------------------
-// define a custom type with attribute listeners.
-class Foo extends EventTarget("message", "error") {
+// This has `onabort` property.
+class AbortSignal extends EventTarget("abort") {
+    constructor() {
+        this.aborted = false
+    }
 }
-// or non-variadic
-class Foo extends EventTarget(["message", "error"]) {
-}
-
-//-----------------------------------------------------------------------------
-// add event listeners.
-let foo = new Foo();
-foo.onmessage = event => {
-    console.log(event.data);
-};
-foo.onerror = event => {
-    console.log(event.message);
-};
-foo.addEventListener("message", event => {
-    console.log(event.data);
-});
-
-//-----------------------------------------------------------------------------
-// dispatch a event simply (non standard).
-foo.dispatchEvent({type: "message", data: "hello"});
-foo.dispatchEvent({type: "error", message: "an error"});
 ```
 
-### Use in ES5
+## 📚 Examples
 
-- Basic.
+### ES2015 and later
 
-  ```js
-  function Foo() {
-      EventTarget.call(this);
-  }
-
-  Foo.prototype = Object.create(EventTarget.prototype, {
-      constructor: {
-          value: Foo,
-          configurable: true,
-          writable: true
-      },
-
-      //....
-  });
-  ```
-
-- With attribute listeners.
-
-  ```js
-  function Foo() {
-      EventTarget.call(this);
-  }
-
-  Foo.prototype = Object.create(EventTarget("message", "error").prototype, {
-  // or
-  // Foo.prototype = Object.create(EventTarget(["message", "error"]).prototype, {
-      constructor: {
-          value: Foo,
-          configurable: true,
-          writable: true
-      },
-
-      //....
-  });
-  ```
-
-### Use with RequireJS
+> https://jsfiddle.net/636vea92/
 
 ```js
-require(["https://cdn.rawgit.com/mysticatea/event-target-shim/v2.0.0/dist/event-target-shim.min.js"], function(EventTarget) {
-    //...
-});
+const {EventTarget, defineEventAttribute} = EventTargetShim
+
+// Define a derived class.
+class Foo extends EventTarget {
+    // ...
+}
+
+// Define `foo.onhello` property.
+defineEventAttribute(Foo.prototype, "hello")
+
+// Register event listeners.
+const foo = new Foo()
+foo.addEventListener("hello", (e) => {
+    console.log("hello", e)
+})
+foo.onhello = (e) => {
+    console.log("onhello", e)
+}
+
+// Dispatching events
+foo.dispatchEvent(new CustomEvent("hello", { detail: "detail" }))
 ```
 
-## API
+### ES5
 
-```ts
-declare class EventTarget {
-    constructor();
-    addEventListener(type: string, listener?: (event: Event) => void, options?: boolean | AddEventListenerOptions): void;
-    removeEventListener(type: string, listener?: (event: Event) => void, options?: boolean | EventListenerOptions): void;
-    dispatchEvent(event: Event | EventLike): boolean;
+> https://jsfiddle.net/522zc9de/
+
+```js
+// Define a derived class.
+function Foo() {
+    EventTarget.call(this)
+}
+Foo.prototype = Object.create(EventTarget.prototype, {
+    constructor: { value: Foo, configurable: true, writable: true }
+    // ...
+})
+
+// Define `foo.onhello` property.
+defineEventAttribute(Foo.prototype, "hello")
+
+// Register event listeners.
+var foo = new Foo()
+foo.addEventListener("hello", function(e) {
+    console.log("hello", e)
+})
+foo.onhello = function(e) {
+    console.log("onhello", e)
 }
 
-// Define EventTarget type with attribute listeners.
-declare function EventTarget(...types: string[]): EventTarget;
-declare function EventTarget(types: string[]): EventTarget;
-
-// Options
-interface EventListenerOptions {
-    capture?: boolean;
+// Dispatching events
+function isSupportEventConstrucor() { // IE does not support.
+    try {
+        new CusomEvent("hello")
+        return true
+    } catch (_err) {
+        return false
+    }
 }
-interface AddEventListenerOptions extends EventListenerOptions {
-    once?: boolean;
-    passive?: boolean;
-}
-
-// Non-standard.
-interface EventLike {
-	type: string;
-	cancelable?: boolean;
+if (isSupportEventConstrucor()) {
+    foo.dispatchEvent(new CustomEvent("hello", { detail: "detail" }))
+} else {
+    var e = document.createEvent("CustomEvent")
+    e.initCustomEvent("hello", false, false, "detail")
+    foo.dispatchEvent(e)
 }
 ```
+
+## 📰 Changelog
+
+- See [GitHub releases](https://github.com/mysticatea/event-target-shim/releases).
+
+## 🍻 Contributing
+
+Contributing is welcome ❤️
+
+Please use GitHub issues/PRs.
+
+### Development tools
+
+- `npm install` installs dependencies for development.
+- `npm test` runs tests and measures code coverage.
+- `npm run clean` removes temporary files of tests.
+- `npm run coverage` opens code coverage of the previous test with your default browser.
+- `npm run lint` runs ESLint.
+- `npm run build` generates `dist` codes.
+- `npm run watch` runs tests on each file change.
