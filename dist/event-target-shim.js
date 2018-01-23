@@ -441,8 +441,10 @@ function isObject(x) {
  */
 function getListeners(eventTarget) {
     const listeners = listenersMap.get(eventTarget);
-    console.assert(listeners != null, "'this' is expected an EventTarget object, but got", eventTarget);
-    return listeners || new Map()
+    if (listeners == null) {
+        throw new TypeError("'this' is expected an EventTarget object, but got another value.")
+    }
+    return listeners
 }
 
 /**
@@ -748,7 +750,7 @@ if (typeof window !== "undefined" && typeof window.EventTarget !== "undefined") 
 
 exports.defineEventAttribute = defineEventAttribute;
 exports.EventTarget = EventTarget;
-exports['default'] = EventTarget;
+exports.default = EventTarget;
 
 module.exports = EventTarget
 module.exports.EventTarget = module.exports["default"] = EventTarget
