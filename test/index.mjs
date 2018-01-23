@@ -714,6 +714,13 @@ function doAttributeListenerTests() {
         this.target.ontest = "listener"
         assert(this.target.ontest === null)
     })
+
+    it("should throw a TypeError if 'this' is invalid.", /* @this */ function() {
+        assert.throws(() => {
+            const obj = Object.create(this.target)
+            obj.ontest = null
+        }, "'this' is expected an EventTarget object, but got another value.")
+    })
 }
 
 //-----------------------------------------------------------------------------
