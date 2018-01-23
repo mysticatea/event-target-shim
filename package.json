@@ -1,7 +1,7 @@
 {
   "name": "event-target-shim",
   "version": "3.0.0",
-  "description": "An implementation of W3C EventTarget interface.",
+  "description": "An implementation of WHATWG EventTarget interface.",
   "main": "dist/event-target-shim",
   "files": [
     "dist"
@@ -65,6 +65,7 @@
   },
   "keywords": [
     "w3c",
+    "whatwg",
     "eventtarget",
     "event",
     "events",

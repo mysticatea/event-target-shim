@@ -41,6 +41,6 @@ const outro = `if (typeof module === "undefined" && typeof define === "undefined
         outro,
     })
 })().catch(error => {
-    console.error(error)
+    console.error(error) //eslint-disable-line no-console
     process.exitCode = 1
 })

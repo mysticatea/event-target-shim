@@ -25,6 +25,6 @@ module.exports.defineEventAttribute = defineEventAttribute
         outro,
     })
 })().catch(error => {
-    console.error(error)
+    console.error(error) //eslint-disable-line no-console
     process.exitCode = 1
 })
