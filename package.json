@@ -7,7 +7,7 @@
     "dist"
   ],
   "engines": {
-    "code": ">=4"
+    "node": ">=4"
   },
   "scripts": {
     "preversion": "npm test",
