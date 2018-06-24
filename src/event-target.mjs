@@ -316,7 +316,14 @@ EventTarget.prototype = {
             // Call this listener
             setPassiveListener(wrappedEvent, (node.passive ? node.listener : null))
             if (typeof node.listener === "function") {
-                node.listener.call(this, wrappedEvent)
+                try {
+                    node.listener.call(this, wrappedEvent)
+                }
+                catch(err) {
+                    if (typeof console === "object" && typeof console.error === "function") {
+                        console.error(err)
+                    }
+                }
             }
             else if (node.listenerType !== ATTRIBUTE && typeof node.listener.handleEvent === "function") {
                 node.listener.handleEvent(wrappedEvent)
