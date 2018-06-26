@@ -722,6 +722,17 @@ function doAttributeListenerTests() {
             obj.ontest = null
         }, "'this' is expected an EventTarget object, but got another value.")
     })
+
+    it("should catch exceptions the listeners threw.", /* @this */ function() {
+        const listener = spy()
+        this.target.addEventListener("test", () => {
+            throw new Error()
+        })
+        this.target.addEventListener("test", listener)
+        this.target.dispatchEvent(createEvent("test"))
+
+        assert(listener.callCount === 1)
+    })
 }
 
 //-----------------------------------------------------------------------------
