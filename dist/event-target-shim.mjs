@@ -1,6 +1,6 @@
 /**
  * @author Toru Nagashima <https://github.com/mysticatea>
- * @copyright 2017 Toru Nagashima. All rights reserved.
+ * @copyright 2015 Toru Nagashima. All rights reserved.
  * See LICENSE file in root directory for full license.
  */
 /**
@@ -549,12 +549,12 @@ function defineCustomEventTarget(eventNames) {
 
 /**
  * EventTarget.
- * 
+ *
  * - This is constructor if no arguments.
  * - This is a function which returns a CustomEventTarget constructor if there are arguments.
- * 
+ *
  * For example:
- * 
+ *
  *     class A extends EventTarget {}
  *     class B extends EventTarget("message") {}
  *     class C extends EventTarget("message", "error") {}
@@ -676,7 +676,7 @@ EventTarget.prototype = {
      * @param {Event|{type:string}} event The event to dispatch.
      * @returns {boolean} `false` if canceled.
      */
-    dispatchEvent(event) {
+    dispatchEvent(event) { //eslint-disable-line complexity
         if (event == null || typeof event.type !== "string") {
             throw new TypeError("\"event.type\" should be a string.")
         }
@@ -715,7 +715,16 @@ EventTarget.prototype = {
             // Call this listener
             setPassiveListener(wrappedEvent, (node.passive ? node.listener : null));
             if (typeof node.listener === "function") {
-                node.listener.call(this, wrappedEvent);
+                try {
+                    node.listener.call(this, wrappedEvent);
+                }
+                catch (err) {
+                    /*eslint-disable no-console */
+                    if (typeof console !== "undefined" && typeof console.error === "function") {
+                        console.error(err);
+                    }
+                    /*eslint-enable no-console */
+                }
             }
             else if (node.listenerType !== ATTRIBUTE && typeof node.listener.handleEvent === "function") {
                 node.listener.handleEvent(wrappedEvent);
