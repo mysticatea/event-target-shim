@@ -27,7 +27,8 @@ const IS_CUSTOM_EVENT_CONSTRUCTOR_SUPPORTED = (function() {
     try {
         new CustomEvent( // eslint-disable-line no-new
             "test",
-            { bubbles: false, cancelable: false, detail: "test" })
+            { bubbles: false, cancelable: false, detail: "test" }
+        )
         return true
     }
     catch (_err) {

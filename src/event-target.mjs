@@ -150,12 +150,12 @@ function defineCustomEventTarget(eventNames) {
 
 /**
  * EventTarget.
- * 
+ *
  * - This is constructor if no arguments.
  * - This is a function which returns a CustomEventTarget constructor if there are arguments.
- * 
+ *
  * For example:
- * 
+ *
  *     class A extends EventTarget {}
  *     class B extends EventTarget("message") {}
  *     class C extends EventTarget("message", "error") {}
@@ -277,7 +277,7 @@ EventTarget.prototype = {
      * @param {Event|{type:string}} event The event to dispatch.
      * @returns {boolean} `false` if canceled.
      */
-    dispatchEvent(event) {
+    dispatchEvent(event) { //eslint-disable-line complexity
         if (event == null || typeof event.type !== "string") {
             throw new TypeError("\"event.type\" should be a string.")
         }
@@ -319,10 +319,12 @@ EventTarget.prototype = {
                 try {
                     node.listener.call(this, wrappedEvent)
                 }
-                catch(err) {
-                    if (typeof console === "object" && typeof console.error === "function") {
+                catch (err) {
+                    /*eslint-disable no-console */
+                    if (typeof console !== "undefined" && typeof console.error === "function") {
                         console.error(err)
                     }
+                    /*eslint-enable no-console */
                 }
             }
             else if (node.listenerType !== ATTRIBUTE && typeof node.listener.handleEvent === "function") {

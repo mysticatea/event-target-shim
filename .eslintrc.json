@@ -9,6 +9,9 @@
     },
     "rules": {
         "valid-jsdoc": "off",
+        "import/newline-after-import": "off",
+        "import/first": "off",
+
         // `for-of` and `typeof x === "object"` have big cost after babel-transpiling.
         "no-restricted-syntax": ["error", "ClassDeclaration,ClassExpression", "ForOfStatement", "BinaryExpression[left.operator='typeof'][right.value='object']"],
         "prefer-rest-params": "off",
