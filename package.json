@@ -1,10 +1,12 @@
 {
   "name": "event-target-shim",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "An implementation of WHATWG EventTarget interface.",
   "main": "dist/event-target-shim",
+  "types": "index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "index.d.ts"
   ],
   "engines": {
     "node": ">=4"
