@@ -1,3 +1,5 @@
+export as namespace EventTargetShim;
+
 export interface Event {
     /**
      * The type of this event.
@@ -142,4 +144,4 @@ export default EventTarget;
  * @param eventTargetPrototype The event target prototype to define an event attribute.
  * @param eventName The event name to define.
  */
-export function defineEventAttribute(eventTargetPrototype: EventTarget, eventName: string);
+export function defineEventAttribute(eventTargetPrototype: EventTarget, eventName: string): void;
