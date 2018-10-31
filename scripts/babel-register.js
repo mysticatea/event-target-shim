@@ -1,1 +1,1 @@
-require("babel-register")({ extensions: [".js", ".mjs"] })
+require("@babel/register")({ extensions: [".js", ".mjs"] })

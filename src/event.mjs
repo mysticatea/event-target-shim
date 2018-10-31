@@ -33,7 +33,11 @@ const wrappers = new WeakMap()
  */
 function pd(event) {
     const retv = privateData.get(event)
-    console.assert(retv != null, "'this' is expected an Event object, but got", event)
+    console.assert(
+        retv != null,
+        "'this' is expected an Event object, but got",
+        event,
+    )
     return retv
 }
 
@@ -196,7 +200,10 @@ Event.prototype = {
     preventDefault() {
         const data = pd(this)
         if (data.passiveListener != null) {
-            console.warn("Event#preventDefault() was called from a passive listener:", data.passiveListener)
+            console.warn(
+                "Event#preventDefault() was called from a passive listener:",
+                data.passiveListener,
+            )
             return
         }
         if (!data.event.cancelable) {
@@ -235,7 +242,11 @@ Event.prototype = {
 }
 
 // `constructor` is not enumerable.
-Object.defineProperty(Event.prototype, "constructor", { value: Event, configurable: true, writable: true })
+Object.defineProperty(Event.prototype, "constructor", {
+    value: Event,
+    configurable: true,
+    writable: true,
+})
 
 // Ensure `event instanceof window.Event` is `true`.
 if (typeof window !== "undefined" && typeof window.Event !== "undefined") {
@@ -308,11 +319,13 @@ function defineWrapper(BaseEvent, proto) {
         const key = keys[i]
         if (!(key in BaseEvent.prototype)) {
             const descriptor = Object.getOwnPropertyDescriptor(proto, key)
-            const isFunc = (typeof descriptor.value === "function")
+            const isFunc = typeof descriptor.value === "function"
             Object.defineProperty(
                 CustomEvent.prototype,
                 key,
-                isFunc ? defineCallDescriptor(key) : defineRedirectDescriptor(key)
+                isFunc
+                    ? defineCallDescriptor(key)
+                    : defineRedirectDescriptor(key),
             )
         }
     }

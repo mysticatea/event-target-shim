@@ -1,4 +1,10 @@
-import { isStopped, setCurrentTarget, setEventPhase, setPassiveListener, wrapEvent } from "./event.mjs"
+import {
+    isStopped,
+    setCurrentTarget,
+    setEventPhase,
+    setPassiveListener,
+    wrapEvent,
+} from "./event.mjs"
 
 /**
  * @typedef {object} ListenerNode
@@ -39,7 +45,9 @@ function isObject(x) {
 function getListeners(eventTarget) {
     const listeners = listenersMap.get(eventTarget)
     if (listeners == null) {
-        throw new TypeError("'this' is expected an EventTarget object, but got another value.")
+        throw new TypeError(
+            "'this' is expected an EventTarget object, but got another value.",
+        )
     }
     return listeners
 }
@@ -78,15 +86,12 @@ function defineEventAttributeDescriptor(eventName) {
                     // Remove old value.
                     if (prev !== null) {
                         prev.next = node.next
-                    }
-                    else if (node.next !== null) {
+                    } else if (node.next !== null) {
                         listeners.set(eventName, node.next)
-                    }
-                    else {
+                    } else {
                         listeners.delete(eventName)
                     }
-                }
-                else {
+                } else {
                     prev = node
                 }
 
@@ -104,8 +109,7 @@ function defineEventAttributeDescriptor(eventName) {
                 }
                 if (prev === null) {
                     listeners.set(eventName, newNode)
-                }
-                else {
+                } else {
                     prev.next = newNode
                 }
             }
@@ -122,7 +126,11 @@ function defineEventAttributeDescriptor(eventName) {
  * @returns {void}
  */
 function defineEventAttribute(eventTargetPrototype, eventName) {
-    Object.defineProperty(eventTargetPrototype, `on${eventName}`, defineEventAttributeDescriptor(eventName))
+    Object.defineProperty(
+        eventTargetPrototype,
+        `on${eventName}`,
+        defineEventAttributeDescriptor(eventName),
+    )
 }
 
 /**
@@ -138,7 +146,11 @@ function defineCustomEventTarget(eventNames) {
     }
 
     CustomEventTarget.prototype = Object.create(EventTarget.prototype, {
-        constructor: { value: CustomEventTarget, configurable: true, writable: true },
+        constructor: {
+            value: CustomEventTarget,
+            configurable: true,
+            writable: true,
+        },
     })
 
     for (let i = 0; i < eventNames.length; ++i) {
@@ -200,8 +212,10 @@ EventTarget.prototype = {
 
         const listeners = getListeners(this)
         const optionsIsObj = isObject(options)
-        const capture = optionsIsObj ? Boolean(options.capture) : Boolean(options)
-        const listenerType = (capture ? CAPTURE : BUBBLE)
+        const capture = optionsIsObj
+            ? Boolean(options.capture)
+            : Boolean(options)
+        const listenerType = capture ? CAPTURE : BUBBLE
         const newNode = {
             listener,
             listenerType,
@@ -220,7 +234,10 @@ EventTarget.prototype = {
         // Traverse to the tail while checking duplication..
         let prev = null
         while (node != null) {
-            if (node.listener === listener && node.listenerType === listenerType) {
+            if (
+                node.listener === listener &&
+                node.listenerType === listenerType
+            ) {
                 // Should ignore duplication.
                 return false
             }
@@ -246,20 +263,23 @@ EventTarget.prototype = {
         }
 
         const listeners = getListeners(this)
-        const capture = isObject(options) ? Boolean(options.capture) : Boolean(options)
-        const listenerType = (capture ? CAPTURE : BUBBLE)
+        const capture = isObject(options)
+            ? Boolean(options.capture)
+            : Boolean(options)
+        const listenerType = capture ? CAPTURE : BUBBLE
 
         let prev = null
         let node = listeners.get(eventName)
         while (node != null) {
-            if (node.listener === listener && node.listenerType === listenerType) {
+            if (
+                node.listener === listener &&
+                node.listenerType === listenerType
+            ) {
                 if (prev !== null) {
                     prev.next = node.next
-                }
-                else if (node.next !== null) {
+                } else if (node.next !== null) {
                     listeners.set(eventName, node.next)
-                }
-                else {
+                } else {
                     listeners.delete(eventName)
                 }
                 return true
@@ -277,9 +297,9 @@ EventTarget.prototype = {
      * @param {Event|{type:string}} event The event to dispatch.
      * @returns {boolean} `false` if canceled.
      */
-    dispatchEvent(event) { //eslint-disable-line complexity
+    dispatchEvent(event) {
         if (event == null || typeof event.type !== "string") {
-            throw new TypeError("\"event.type\" should be a string.")
+            throw new TypeError('"event.type" should be a string.')
         }
 
         // If listeners aren't registered, terminate.
@@ -301,33 +321,35 @@ EventTarget.prototype = {
             if (node.once) {
                 if (prev !== null) {
                     prev.next = node.next
-                }
-                else if (node.next !== null) {
+                } else if (node.next !== null) {
                     listeners.set(eventName, node.next)
-                }
-                else {
+                } else {
                     listeners.delete(eventName)
                 }
-            }
-            else {
+            } else {
                 prev = node
             }
 
             // Call this listener
-            setPassiveListener(wrappedEvent, (node.passive ? node.listener : null))
+            setPassiveListener(
+                wrappedEvent,
+                node.passive ? node.listener : null,
+            )
             if (typeof node.listener === "function") {
                 try {
                     node.listener.call(this, wrappedEvent)
-                }
-                catch (err) {
-                    /*eslint-disable no-console */
-                    if (typeof console !== "undefined" && typeof console.error === "function") {
+                } catch (err) {
+                    if (
+                        typeof console !== "undefined" &&
+                        typeof console.error === "function"
+                    ) {
                         console.error(err)
                     }
-                    /*eslint-enable no-console */
                 }
-            }
-            else if (node.listenerType !== ATTRIBUTE && typeof node.listener.handleEvent === "function") {
+            } else if (
+                node.listenerType !== ATTRIBUTE &&
+                typeof node.listener.handleEvent === "function"
+            ) {
                 node.listener.handleEvent(wrappedEvent)
             }
 
@@ -347,10 +369,17 @@ EventTarget.prototype = {
 }
 
 // `constructor` is not enumerable.
-Object.defineProperty(EventTarget.prototype, "constructor", { value: EventTarget, configurable: true, writable: true })
+Object.defineProperty(EventTarget.prototype, "constructor", {
+    value: EventTarget,
+    configurable: true,
+    writable: true,
+})
 
 // Ensure `eventTarget instanceof window.EventTarget` is `true`.
-if (typeof window !== "undefined" && typeof window.EventTarget !== "undefined") {
+if (
+    typeof window !== "undefined" &&
+    typeof window.EventTarget !== "undefined"
+) {
     Object.setPrototypeOf(EventTarget.prototype, window.EventTarget.prototype)
 }
 

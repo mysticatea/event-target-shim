@@ -53,7 +53,10 @@ export default [
             babel({
                 babelrc: false,
                 presets: [
-                    ["env", { modules: false, targets: { browsers: ["ie 11"] } }],
+                    [
+                        "@babel/preset-env",
+                        { modules: false, targets: { browsers: ["ie 11"] } },
+                    ],
                 ],
             }),
             minify({

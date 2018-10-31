@@ -1,0 +1,31 @@
+root: true
+
+extends:
+  - plugin:@mysticatea/es2018
+  - plugin:@mysticatea/+node
+
+globals:
+  console: false
+  window: false
+
+rules:
+  new-cap: "off"
+  valid-jsdoc: "off"
+  import/newline-after-import: "off"
+  import/first: "off"
+
+  # To reduce size for babel-translation.
+  no-restricted-syntax:
+    - error
+    - ClassDeclaration
+    - ClassExpression
+    - ForOfStatement
+    - BinaryExpression[left.operator='typeof'][right.value='object']
+  prefer-rest-params: "off"
+  prefer-spread: "off"
+  "@mysticatea/prefer-for-of": "off"
+
+overrides:
+  - files: "*"
+    rules:
+      "@mysticatea/node/no-unsupported-features/es-syntax": "off"

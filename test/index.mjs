@@ -17,21 +17,20 @@ import EventTarget from "../src/event-target.mjs"
 /*globals CustomEvent, document, window */
 
 // To check working on Node.js
-const HAS_EVENT_TARGET_INTERFACE = (
-    typeof window !== "undefined" &&
-    typeof window.EventTarget !== "undefined"
-)
+const HAS_EVENT_TARGET_INTERFACE =
+    typeof window !== "undefined" && typeof window.EventTarget !== "undefined"
 
 // CustomEvent constructor cannot be used in IE.
 const IS_CUSTOM_EVENT_CONSTRUCTOR_SUPPORTED = (function() {
     try {
-        new CustomEvent( // eslint-disable-line no-new
-            "test",
-            { bubbles: false, cancelable: false, detail: "test" }
-        )
+        //eslint-disable-next-line no-new
+        new CustomEvent("test", {
+            bubbles: false,
+            cancelable: false,
+            detail: "test",
+        })
         return true
-    }
-    catch (_err) {
+    } catch (_err) {
         return false
     }
 })()
@@ -67,12 +66,18 @@ function createEvent(type, bubbles, cancelable, detail) {
  * @returns {void}
  */
 function doBasicTests() {
-    (HAS_EVENT_TARGET_INTERFACE ? it : xit)("should be instanceof `window.EventTarget`.", /* @this */ function() {
-        assert(this.target instanceof window.EventTarget)
-    })
-    ;(HAS_EVENT_TARGET_INTERFACE ? it : xit)("should not equal `EventTarget` and `window.EventTarget`.", () => {
-        assert(EventTarget !== window.EventTarget)
-    })
+    ;(HAS_EVENT_TARGET_INTERFACE ? it : xit)(
+        "should be instanceof `window.EventTarget`.",
+        /* @this */ function() {
+            assert(this.target instanceof window.EventTarget)
+        },
+    )
+    ;(HAS_EVENT_TARGET_INTERFACE ? it : xit)(
+        "should not equal `EventTarget` and `window.EventTarget`.",
+        () => {
+            assert(EventTarget !== window.EventTarget)
+        },
+    )
 
     it("should call registered listeners on called `dispatchEvent()`.", /* @this */ function() {
         let lastEvent = null
@@ -273,25 +278,25 @@ function doBasicTests() {
     })
 
     // IE is not supported.
-    ;(IS_CUSTOM_EVENT_CONSTRUCTOR_SUPPORTED ? it : xit)("should work with CustomEvent", /* @this */ function() {
-        let lastEvent = null
-        const event = new CustomEvent("test", { detail: 123 })
-        this.target.addEventListener("test", (e) => {
-            lastEvent = e
-        })
-        this.target.dispatchEvent(event)
+    ;(IS_CUSTOM_EVENT_CONSTRUCTOR_SUPPORTED ? it : xit)(
+        "should work with CustomEvent",
+        /* @this */ function() {
+            let lastEvent = null
+            const event = new CustomEvent("test", { detail: 123 })
+            this.target.addEventListener("test", e => {
+                lastEvent = e
+            })
+            this.target.dispatchEvent(event)
 
-        assert(lastEvent != null)
-        assert(lastEvent.detail === event.detail)
-    })
+            assert(lastEvent != null)
+            assert(lastEvent.detail === event.detail)
+        },
+    )
 
     it("cannot call a class as a function", () => {
-        assert.throws(
-            () => {
-                EventTarget()
-            },
-            "Cannot call a class as a function"
-        )
+        assert.throws(() => {
+            EventTarget()
+        }, "Cannot call a class as a function")
     })
 
     it("should allow the listener is omitted", /* @this */ function() {
@@ -299,34 +304,22 @@ function doBasicTests() {
         this.target.removeEventListener("test")
     })
 
-    it("should throw a TypeError if the listener is neither of a function nor an object with \"handleEvent\" method", /* @this */ function() {
-        assert.throws(
-            () => {
-                this.target.addEventListener("test", "listener")
-            },
-            TypeError
-        )
-        assert.throws(
-            () => {
-                this.target.addEventListener("test", false)
-            },
-            TypeError
-        )
-        assert.throws(
-            () => {
-                this.target.addEventListener("test", 0)
-            },
-            TypeError
-        )
-        assert.throws(
-            () => {
-                this.target.addEventListener("test", "")
-            },
-            TypeError
-        )
+    it('should throw a TypeError if the listener is neither of a function nor an object with "handleEvent" method', /* @this */ function() {
+        assert.throws(() => {
+            this.target.addEventListener("test", "listener")
+        }, TypeError)
+        assert.throws(() => {
+            this.target.addEventListener("test", false)
+        }, TypeError)
+        assert.throws(() => {
+            this.target.addEventListener("test", 0)
+        }, TypeError)
+        assert.throws(() => {
+            this.target.addEventListener("test", "")
+        }, TypeError)
     })
 
-    it("should allow an object which has \"handleEvent\" method as a listener.", /* @this */ function() {
+    it('should allow an object which has "handleEvent" method as a listener.', /* @this */ function() {
         let lastEvent = null
         let currentTarget = null
         let listenerThis = null
@@ -356,7 +349,7 @@ function doBasicTests() {
         assert(this.target.removeEventListener("test", listener))
     })
 
-    it("should not call removed listeners (an object with \"handleEvent\" method).", /* @this */ function() {
+    it('should not call removed listeners (an object with "handleEvent" method).', /* @this */ function() {
         const listener = { handleEvent: spy() }
         const event = createEvent("test")
         this.target.addEventListener("test", listener)
@@ -366,12 +359,12 @@ function doBasicTests() {
         assert(listener.handleEvent.called === false)
     })
 
-    it("should accept an object without \"handleEvent\" method.", /* @this */ function() {
+    it('should accept an object without "handleEvent" method.', /* @this */ function() {
         const listener = {}
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(createEvent("test"))
 
-        const handleEvent = listener.handleEvent = spy()
+        const handleEvent = (listener.handleEvent = spy())
         this.target.dispatchEvent(createEvent("test"))
 
         listener.handleEvent = {}
@@ -383,7 +376,7 @@ function doBasicTests() {
         assert(handleEvent.callCount === 1)
     })
 
-    it("should not call \"handleEvent\" method if the object is a function.", /* @this */ function() {
+    it('should not call "handleEvent" method if the object is a function.', /* @this */ function() {
         const listener = spy()
         listener.handleEvent = spy()
         this.target.addEventListener("test", listener)
@@ -470,8 +463,16 @@ function doBasicTests() {
         this.target.dispatchEvent(event)
 
         assert(listener.callCount === 1)
-        assert(this.target.removeEventListener("test", listener, { capture: false }))
-        assert(this.target.removeEventListener("test", listener, { capture: false }) === false)
+        assert(
+            this.target.removeEventListener("test", listener, {
+                capture: false,
+            }),
+        )
+        assert(
+            this.target.removeEventListener("test", listener, {
+                capture: false,
+            }) === false,
+        )
     })
 
     it("should disallow duplicate listeners if those capture flag are same (`{capture: true}` and `true`).", /* @this */ function() {
@@ -482,8 +483,16 @@ function doBasicTests() {
         this.target.dispatchEvent(event)
 
         assert(listener.callCount === 1)
-        assert(this.target.removeEventListener("test", listener, { capture: true }))
-        assert(this.target.removeEventListener("test", listener, { capture: true }) === false)
+        assert(
+            this.target.removeEventListener("test", listener, {
+                capture: true,
+            }),
+        )
+        assert(
+            this.target.removeEventListener("test", listener, {
+                capture: true,
+            }) === false,
+        )
     })
 
     it("a result of `dispatchEvent()` should be true even if had canceled by passive listeners.", /* @this */ function() {
@@ -563,7 +572,7 @@ function doBasicTests() {
         const event = Object.create(proto)
         event.type = "test"
 
-        this.target.addEventListener("test", (e) => (lastValue = e.value))
+        this.target.addEventListener("test", e => (lastValue = e.value))
         this.target.dispatchEvent(event)
 
         assert(eventThis === event)
@@ -585,7 +594,7 @@ function doBasicTests() {
         const event = Object.create(proto)
         event.type = "test"
 
-        this.target.addEventListener("test", (e) => (e.value = 10))
+        this.target.addEventListener("test", e => (e.value = 10))
         this.target.dispatchEvent(event)
 
         assert(eventThis === event)
@@ -604,7 +613,7 @@ function doBasicTests() {
         const event = Object.create(proto)
         event.type = "test"
 
-        this.target.addEventListener("test", (e) => (e.foo(100)))
+        this.target.addEventListener("test", e => e.foo(100))
         this.target.dispatchEvent(event)
 
         assert(eventThis === event)
@@ -622,7 +631,13 @@ function doAttributeListenerTests() {
     })
 
     it("should properties of attribute listener are enumerable.", /* @this */ function() {
-        const expectedKeys = ["addEventListener", "removeEventListener", "dispatchEvent", "ontest", "onhello"]
+        const expectedKeys = [
+            "addEventListener",
+            "removeEventListener",
+            "dispatchEvent",
+            "ontest",
+            "onhello",
+        ]
         const keys = []
         for (const key in this.target) {
             keys.push(key)
@@ -630,7 +645,10 @@ function doAttributeListenerTests() {
 
         assert(keys.length === expectedKeys.length)
         for (let i = 0; i < keys.length; ++i) {
-            assert(expectedKeys.indexOf(keys[i]) !== -1, `Found an unknown key '${keys[i]}'`)
+            assert(
+                expectedKeys.indexOf(keys[i]) !== -1,
+                `Found an unknown key '${keys[i]}'`,
+            )
         }
     })
 
