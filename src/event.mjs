@@ -200,10 +200,15 @@ Event.prototype = {
     preventDefault() {
         const data = pd(this)
         if (data.passiveListener != null) {
-            console.warn(
-                "Event#preventDefault() was called from a passive listener:",
-                data.passiveListener,
-            )
+            if (
+                typeof console !== "undefined" &&
+                typeof console.error === "function"
+            ) {
+                console.error(
+                    "Unable to preventDefault inside passive event listener invocation.",
+                    data.passiveListener,
+                )
+            }
             return
         }
         if (!data.event.cancelable) {
