@@ -3,11 +3,7 @@
  * @copyright 2015 Toru Nagashima. All rights reserved.
  * See LICENSE file in root directory for full license.
  */
-
-// I could not use `assert` module because of https://github.com/defunctzombie/node-util/issues/10
-// I could not use `power-assert` module because of `isImportDefaultSpecifier` not found error.
-import chai from "chai"
-const assert = chai.assert
+import assert from "assert"
 
 // `spy/index.js` has `require("module")`, so it's problem in karma.
 import spy from "spy/lib/spy"
@@ -296,7 +292,7 @@ function doBasicTests() {
     it("cannot call a class as a function", () => {
         assert.throws(() => {
             EventTarget()
-        }, "Cannot call a class as a function")
+        }, /Cannot call a class as a function/u)
     })
 
     it("should allow the listener is omitted", /* @this */ function() {
@@ -738,7 +734,7 @@ function doAttributeListenerTests() {
         assert.throws(() => {
             const obj = Object.create(this.target)
             obj.ontest = null
-        }, "'this' is expected an EventTarget object, but got another value.")
+        }, /'this' is expected an EventTarget object, but got another value\./u)
     })
 
     it("should catch exceptions the listeners threw.", /* @this */ function() {

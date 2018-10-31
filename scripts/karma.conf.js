@@ -15,7 +15,7 @@ module.exports = function(config) {
         preprocessors: { "test/index.mjs": ["rollup"] },
         rollupPreprocessor: {
             plugins: [
-                resolve(),
+                resolve({ browser: true, preferBuiltins: false }),
                 commonjs(),
                 json(),
                 babel({
@@ -32,9 +32,11 @@ module.exports = function(config) {
                     externalHelpers: false,
                 }),
             ],
-            format: "iife",
-            name: "EventTargetShim",
-            sourcemap: "inline",
+            output: {
+                format: "iife",
+                name: "EventTargetShim",
+                sourcemap: "inline",
+            },
         },
     })
 }
