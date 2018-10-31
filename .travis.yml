@@ -5,6 +5,8 @@ node_js:
   - "4"
   - "6"
   - "8"
+  - "10"
+  - "11"
 
 script:
   - npm run -s test:mocha
