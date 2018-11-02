@@ -4,10 +4,7 @@
  * See LICENSE file in root directory for full license.
  */
 import assert from "assert"
-
-// `spy/index.js` has `require("module")`, so it's problem in karma.
-import spy from "spy/lib/spy"
-
+import { spy } from "@mysticatea/spy"
 import EventTarget from "../src/event-target.mjs"
 
 /*globals CustomEvent, document, window */
@@ -94,8 +91,8 @@ function doBasicTests() {
         this.target.addEventListener("test", listener2)
         this.target.dispatchEvent(event)
 
-        assert(listener.callCount === 1)
-        assert(listener2.callCount === 1)
+        assert(listener.calls.length === 1)
+        assert(listener2.calls.length === 1)
         assert(lastEvent.type === "test")
         assert(lastEvent.target === this.target)
         assert(lastEvent.currentTarget === null)
@@ -127,7 +124,7 @@ function doBasicTests() {
         this.target.removeEventListener("test", listener)
         this.target.dispatchEvent(event)
 
-        assert(listener.called === false)
+        assert(listener.calls.length === 0)
     })
 
     it("it should not allow duplicate in listeners.", /* @this */ function() {
@@ -137,7 +134,7 @@ function doBasicTests() {
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(event)
 
-        assert(listener.callCount === 1)
+        assert(listener.calls.length === 1)
         assert(this.target.removeEventListener("test", listener))
         assert(this.target.removeEventListener("test", listener) === false)
     })
@@ -149,7 +146,7 @@ function doBasicTests() {
         this.target.addEventListener("test", listener, false)
         this.target.dispatchEvent(event)
 
-        assert(listener.callCount === 2)
+        assert(listener.calls.length === 2)
         assert(this.target.removeEventListener("test", listener, false))
         assert(this.target.removeEventListener("test", listener, true))
     })
@@ -160,7 +157,7 @@ function doBasicTests() {
         this.target.addEventListener("test2", listener)
         this.target.dispatchEvent(event)
 
-        assert(listener.called === false)
+        assert(listener.calls.length === 0)
     })
 
     it("a result of `dispatchEvent()` should be true if hadn't canceled by listeners.", /* @this */ function() {
@@ -189,7 +186,7 @@ function doBasicTests() {
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(event)
 
-        assert(event.preventDefault.called)
+        assert(event.preventDefault.calls.length === 1)
     })
 
     it("should be not possible to cancel if the event cannot cancel.", /* @this */ function() {
@@ -209,7 +206,7 @@ function doBasicTests() {
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(event)
 
-        assert(event.stopPropagation.called)
+        assert(event.stopPropagation.calls.length === 1)
     })
 
     it("should stop calling registered listeners immediately when called `e.stopImmediatePropagation()` by a listener.", /* @this */ function() {
@@ -220,8 +217,8 @@ function doBasicTests() {
         this.target.addEventListener("test", listener2)
         const result = this.target.dispatchEvent(event)
 
-        assert(listener1.callCount === 1)
-        assert(listener2.called === false)
+        assert(listener1.calls.length === 1)
+        assert(listener2.calls.length === 0)
         assert(result === true)
     })
 
@@ -233,7 +230,7 @@ function doBasicTests() {
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(event)
 
-        assert(event.stopImmediatePropagation.called)
+        assert(event.stopImmediatePropagation.calls.length === 1)
     })
 
     it("should call registered listeners if a listener removed me.", /* @this */ function() {
@@ -244,8 +241,8 @@ function doBasicTests() {
         this.target.addEventListener("test", listener2)
         const result = this.target.dispatchEvent(event)
 
-        assert(listener1.callCount === 1)
-        assert(listener2.callCount === 1)
+        assert(listener1.calls.length === 1)
+        assert(listener2.calls.length === 1)
         assert(result === true)
     })
 
@@ -260,7 +257,7 @@ function doBasicTests() {
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(event)
 
-        assert(listener.callCount === 1)
+        assert(listener.calls.length === 1)
         assert(lastEvent.type === "test")
         assert(lastEvent.target === this.target)
         assert(currentTarget === this.target)
@@ -330,7 +327,7 @@ function doBasicTests() {
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(event)
 
-        assert(listener.handleEvent.callCount === 1)
+        assert(listener.handleEvent.calls.length === 1)
         assert(lastEvent.type === "test")
         assert(lastEvent.target === this.target)
         assert(currentTarget === this.target)
@@ -352,7 +349,7 @@ function doBasicTests() {
         this.target.removeEventListener("test", listener)
         this.target.dispatchEvent(event)
 
-        assert(listener.handleEvent.called === false)
+        assert(listener.handleEvent.calls.length === 0)
     })
 
     it('should accept an object without "handleEvent" method.', /* @this */ function() {
@@ -369,7 +366,7 @@ function doBasicTests() {
         delete listener.handleEvent
         this.target.dispatchEvent(createEvent("test"))
 
-        assert(handleEvent.callCount === 1)
+        assert(handleEvent.calls.length === 1)
     })
 
     it('should not call "handleEvent" method if the object is a function.', /* @this */ function() {
@@ -378,8 +375,8 @@ function doBasicTests() {
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(createEvent("test"))
 
-        assert(listener.callCount === 1)
-        assert(listener.handleEvent.callCount === 0)
+        assert(listener.calls.length === 1)
+        assert(listener.handleEvent.calls.length === 0)
     })
 
     it("should allow a listener to be an object with a handleEvent method and have this set correctly", /* @this */ function() {
@@ -396,7 +393,7 @@ function doBasicTests() {
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(event)
 
-        assert(listener.complete.callCount === 1)
+        assert(listener.complete.calls.length === 1)
     })
 
     it("should not call removed object listeners.", /* @this */ function() {
@@ -414,7 +411,7 @@ function doBasicTests() {
         this.target.removeEventListener("test", listener)
         this.target.dispatchEvent(event)
 
-        assert(listener.complete.callCount === 0)
+        assert(listener.complete.calls.length === 0)
     })
 
     it("it should call the listener with `once` option only one time.", /* @this */ function() {
@@ -423,7 +420,7 @@ function doBasicTests() {
         this.target.dispatchEvent(createEvent("test"))
         this.target.dispatchEvent(createEvent("test"))
 
-        assert(listener.callCount === 1)
+        assert(listener.calls.length === 1)
         assert(this.target.removeEventListener("test", listener) === false)
     })
 
@@ -434,7 +431,7 @@ function doBasicTests() {
         this.target.addEventListener("test", listener, true)
         this.target.dispatchEvent(event)
 
-        assert(listener.callCount === 2)
+        assert(listener.calls.length === 2)
         assert(this.target.removeEventListener("test", listener, false))
         assert(this.target.removeEventListener("test", listener, true))
     })
@@ -446,7 +443,7 @@ function doBasicTests() {
         this.target.addEventListener("test", listener, false)
         this.target.dispatchEvent(event)
 
-        assert(listener.callCount === 2)
+        assert(listener.calls.length === 2)
         assert(this.target.removeEventListener("test", listener, false))
         assert(this.target.removeEventListener("test", listener, true))
     })
@@ -458,7 +455,7 @@ function doBasicTests() {
         this.target.addEventListener("test", listener, false)
         this.target.dispatchEvent(event)
 
-        assert(listener.callCount === 1)
+        assert(listener.calls.length === 1)
         assert(
             this.target.removeEventListener("test", listener, {
                 capture: false,
@@ -478,7 +475,7 @@ function doBasicTests() {
         this.target.addEventListener("test", listener, true)
         this.target.dispatchEvent(event)
 
-        assert(listener.callCount === 1)
+        assert(listener.calls.length === 1)
         assert(
             this.target.removeEventListener("test", listener, {
                 capture: true,
@@ -517,7 +514,7 @@ function doBasicTests() {
         this.target.addEventListener("test", listener, { passive: true })
         this.target.dispatchEvent(event)
 
-        assert(event.preventDefault.called === false)
+        assert(event.preventDefault.calls.length === 0)
     })
 
     it("'event.stopPropagation` should be called even if had called by passive listeners.", /* @this */ function() {
@@ -528,7 +525,7 @@ function doBasicTests() {
         this.target.addEventListener("test", listener, { passive: true })
         this.target.dispatchEvent(event)
 
-        assert(event.stopPropagation.called)
+        assert(event.stopPropagation.calls.length === 1)
     })
 
     it("'event.stopImmediatePropagation` should be called even if had called by passive listeners.", /* @this */ function() {
@@ -539,7 +536,7 @@ function doBasicTests() {
         this.target.addEventListener("test", listener, { passive: true })
         this.target.dispatchEvent(event)
 
-        assert(event.stopImmediatePropagation.called)
+        assert(event.stopImmediatePropagation.calls.length === 1)
     })
 
     it("it should call the listeners with `once` option only one time.", /* @this */ function() {
@@ -550,8 +547,8 @@ function doBasicTests() {
         this.target.dispatchEvent(createEvent("test"))
         this.target.dispatchEvent(createEvent("test"))
 
-        assert(listener1.callCount === 1)
-        assert(listener2.callCount === 1)
+        assert(listener1.calls.length === 1)
+        assert(listener2.calls.length === 1)
         assert(this.target.removeEventListener("test", listener1) === false)
         assert(this.target.removeEventListener("test", listener2) === false)
     })
@@ -655,7 +652,7 @@ function doAttributeListenerTests() {
         this.target.dispatchEvent(event)
 
         assert(this.target.ontest === listener)
-        assert(listener.callCount === 1)
+        assert(listener.calls.length === 1)
     })
 
     it("should not call removed listeners.", /* @this */ function() {
@@ -666,7 +663,7 @@ function doAttributeListenerTests() {
         this.target.dispatchEvent(event)
 
         assert(this.target.ontest === null)
-        assert(listener.called === false)
+        assert(listener.calls.length === 0)
     })
 
     it("should not allow duplicate in listeners.", /* @this */ function() {
@@ -677,7 +674,7 @@ function doAttributeListenerTests() {
         this.target.dispatchEvent(event)
 
         assert(this.target.ontest === listener)
-        assert(listener.callCount === 1)
+        assert(listener.calls.length === 1)
     })
 
     it("should allow duplicate in listeners if these kind is different.", /* @this */ function() {
@@ -689,7 +686,7 @@ function doAttributeListenerTests() {
         this.target.dispatchEvent(event)
 
         assert(this.target.ontest === listener)
-        assert(listener.callCount === 3)
+        assert(listener.calls.length === 3)
 
         // for coverage.
         this.target.ontest = null
@@ -717,7 +714,7 @@ function doAttributeListenerTests() {
         this.target.dispatchEvent(createEvent("test"))
 
         assert(this.target.ontest === listener)
-        assert(listener.handleEvent.callCount === 0)
+        assert(listener.handleEvent.calls.length === 0)
     })
 
     it("should handle a non object as null.", /* @this */ function() {
@@ -745,7 +742,7 @@ function doAttributeListenerTests() {
         this.target.addEventListener("test", listener)
         this.target.dispatchEvent(createEvent("test"))
 
-        assert(listener.callCount === 1)
+        assert(listener.calls.length === 1)
     })
 }
 
