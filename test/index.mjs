@@ -612,6 +612,192 @@ function doBasicTests() {
         assert(eventThis === event)
         assert(lastValue === 100)
     })
+
+    it("'event.srcElement` should equal to `event.target`.", /* @this */ function() {
+        const listener = spy(event => {
+            assert.strictEqual(event.srcElement, event.target)
+        })
+
+        this.target.addEventListener("test", listener)
+        this.target.dispatchEvent(createEvent("test", false, false))
+
+        assert.strictEqual(listener.calls.length, 1)
+    })
+
+    //
+    ;[true, false].forEach(bubbles => {
+        it(`'event.cancelBubble' should apply to the original event object if 'bubbles' is ${bubbles}.`, /* @this */ function() {
+            const values = []
+            const listener = spy(event => {
+                values.push(event.cancelBubble)
+                event.cancelBubble = true
+                values.push(event.cancelBubble)
+
+                // Assigning false does nothing.
+                event.cancelBubble = false
+                values.push(event.cancelBubble)
+            })
+            const event = createEvent("test", bubbles, false)
+            const hasCancelBubble = typeof event.cancelBubble === "boolean"
+            let setCancelBubble = null
+
+            if (hasCancelBubble) {
+                const d = Object.getOwnPropertyDescriptor(
+                    Object.getPrototypeOf(event),
+                    "cancelBubble",
+                )
+                Object.defineProperty(event, "cancelBubble", {
+                    get: () => d.get.call(event),
+                    set: (setCancelBubble = spy(value => {
+                        d.set.call(event, value)
+                    })),
+                })
+            }
+
+            this.target.addEventListener("test", listener)
+            this.target.dispatchEvent(event)
+
+            assert.strictEqual(listener.calls.length, 1)
+            assert.deepStrictEqual(values, [false, true, true])
+            assert.strictEqual(
+                hasCancelBubble ? setCancelBubble.calls.length : 1,
+                1,
+            )
+        })
+    })
+
+    it("'event.cancelBubble` should be true after 'event.stopPropagation' is called.", /* @this */ function() {
+        const values = []
+        const listener = spy(event => {
+            values.push(event.cancelBubble)
+            event.stopPropagation()
+            values.push(event.cancelBubble)
+        })
+        const event = createEvent("test", false, false)
+        const hasCancelBubble = typeof event.cancelBubble === "boolean"
+
+        this.target.addEventListener("test", listener)
+        this.target.dispatchEvent(event)
+
+        assert.strictEqual(listener.calls.length, 1)
+        assert.deepStrictEqual(values, [false, true])
+        assert.strictEqual(
+            event.cancelBubble,
+            hasCancelBubble ? true : undefined,
+        )
+    })
+
+    it("'event.cancelBubble` should be true after 'event.stopImmediatePropagation' is called.", /* @this */ function() {
+        const values = []
+        const listener = spy(event => {
+            values.push(event.cancelBubble)
+            event.stopImmediatePropagation()
+            values.push(event.cancelBubble)
+        })
+        const event = createEvent("test", false, false)
+        const hasCancelBubble = typeof event.cancelBubble === "boolean"
+
+        this.target.addEventListener("test", listener)
+        this.target.dispatchEvent(event)
+
+        assert.strictEqual(listener.calls.length, 1)
+        assert.deepStrictEqual(values, [false, true])
+        assert.strictEqual(
+            event.cancelBubble,
+            hasCancelBubble ? true : undefined,
+        )
+    })
+
+    it("'event.returnValue` should apply to the original event object if `cancelable` is true.", /* @this */ function() {
+        const values = []
+        const listener = spy(event => {
+            values.push(event.returnValue)
+            event.returnValue = false
+            values.push(event.returnValue)
+
+            // Assigning true does nothing.
+            event.returnValue = true
+            values.push(event.returnValue)
+        })
+        const event = createEvent("test", false, true)
+        const hasReturnValue = typeof event.returnValue === "boolean"
+
+        this.target.addEventListener("test", listener)
+        const retv = this.target.dispatchEvent(event)
+
+        assert.strictEqual(listener.calls.length, 1)
+        assert.deepStrictEqual(values, [true, false, false])
+        assert.strictEqual(retv, false)
+        assert.strictEqual(
+            event.returnValue,
+            hasReturnValue ? false : undefined,
+            5,
+        )
+    })
+
+    it("'event.returnValue` should do nothing if cancelable is false.", /* @this */ function() {
+        const values = []
+        const listener = spy(event => {
+            values.push(event.returnValue)
+            event.returnValue = false
+            values.push(event.returnValue)
+        })
+        const event = createEvent("test", false, false)
+        const hasReturnValue = typeof event.returnValue === "boolean"
+
+        this.target.addEventListener("test", listener)
+        const retv = this.target.dispatchEvent(event)
+
+        assert.strictEqual(listener.calls.length, 1)
+        assert.deepStrictEqual(values, [true, true])
+        assert.strictEqual(retv, true)
+        assert.strictEqual(
+            event.returnValue,
+            hasReturnValue ? true : undefined,
+            5,
+        )
+    })
+
+    it("'event.returnValue` should do nothing if passive is true.", /* @this */ function() {
+        const values = []
+        const listener = spy(event => {
+            values.push(event.returnValue)
+            event.returnValue = false
+            values.push(event.returnValue)
+        })
+        const event = createEvent("test", false, true)
+        const hasReturnValue = typeof event.returnValue === "boolean"
+
+        this.target.addEventListener("test", listener, { passive: true })
+        const retv = this.target.dispatchEvent(event)
+
+        assert.strictEqual(listener.calls.length, 1)
+        assert.deepStrictEqual(values, [true, true])
+        assert.strictEqual(retv, true)
+        assert.strictEqual(
+            event.returnValue,
+            hasReturnValue ? true : undefined,
+            5,
+        )
+    })
+
+    it("'event.initEvent` should do nothing.", /* @this */ function() {
+        let error = null
+        const listener = spy(event => {
+            try {
+                event.initEvent()
+            } catch (e) {
+                error = e
+            }
+        })
+        const event = createEvent("test", false, false)
+
+        this.target.addEventListener("test", listener)
+        this.target.dispatchEvent(event)
+
+        assert.strictEqual(listener.calls.length, 1)
+        assert.strictEqual(error, null)
+    })
 }
 
 /**

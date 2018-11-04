@@ -5,7 +5,8 @@
  * @property {number} eventPhase The current event phase.
  * @property {EventTarget|null} currentTarget The current event target.
  * @property {boolean} canceled The flag to prevent default.
- * @property {boolean} stopped The flag to stop propagation immediately.
+ * @property {boolean} stopped The flag to stop propagation.
+ * @property {boolean} immediateStopped The flag to stop propagation immediately.
  * @property {Function|null} passiveListener The listener if the current listener is passive. Otherwise this is null.
  * @property {number} timeStamp The unix time.
  * @private
@@ -42,6 +43,33 @@ function pd(event) {
 }
 
 /**
+ * https://dom.spec.whatwg.org/#set-the-canceled-flag
+ * @param data {PrivateData} private data.
+ */
+function setCancelFlag(data) {
+    if (data.passiveListener != null) {
+        if (
+            typeof console !== "undefined" &&
+            typeof console.error === "function"
+        ) {
+            console.error(
+                "Unable to preventDefault inside passive event listener invocation.",
+                data.passiveListener,
+            )
+        }
+        return
+    }
+    if (!data.event.cancelable) {
+        return
+    }
+
+    data.canceled = true
+    if (typeof data.event.preventDefault === "function") {
+        data.event.preventDefault()
+    }
+}
+
+/**
  * @see https://dom.spec.whatwg.org/#interface-event
  * @private
  */
@@ -59,6 +87,7 @@ function Event(eventTarget, event) {
         currentTarget: eventTarget,
         canceled: false,
         stopped: false,
+        immediateStopped: false,
         passiveListener: null,
         timeStamp: event.timeStamp || Date.now(),
     })
@@ -159,6 +188,8 @@ Event.prototype = {
      */
     stopPropagation() {
         const data = pd(this)
+
+        data.stopped = true
         if (typeof data.event.stopPropagation === "function") {
             data.event.stopPropagation()
         }
@@ -172,6 +203,7 @@ Event.prototype = {
         const data = pd(this)
 
         data.stopped = true
+        data.immediateStopped = true
         if (typeof data.event.stopImmediatePropagation === "function") {
             data.event.stopImmediatePropagation()
         }
@@ -198,27 +230,7 @@ Event.prototype = {
      * @returns {void}
      */
     preventDefault() {
-        const data = pd(this)
-        if (data.passiveListener != null) {
-            if (
-                typeof console !== "undefined" &&
-                typeof console.error === "function"
-            ) {
-                console.error(
-                    "Unable to preventDefault inside passive event listener invocation.",
-                    data.passiveListener,
-                )
-            }
-            return
-        }
-        if (!data.event.cancelable) {
-            return
-        }
-
-        data.canceled = true
-        if (typeof data.event.preventDefault === "function") {
-            data.event.preventDefault()
-        }
+        setCancelFlag(pd(this))
     },
 
     /**
@@ -243,6 +255,60 @@ Event.prototype = {
      */
     get timeStamp() {
         return pd(this).timeStamp
+    },
+
+    /**
+     * The target of this event.
+     * @type {EventTarget}
+     * @deprecated
+     */
+    get srcElement() {
+        return pd(this).eventTarget
+    },
+
+    /**
+     * The flag to stop event bubbling.
+     * @type {boolean}
+     * @deprecated
+     */
+    get cancelBubble() {
+        return pd(this).stopped
+    },
+    set cancelBubble(value) {
+        if (!value) {
+            return
+        }
+        const data = pd(this)
+
+        data.stopped = true
+        if (typeof data.event.cancelBubble === "boolean") {
+            data.event.cancelBubble = true
+        }
+    },
+
+    /**
+     * The flag to indicate cancellation state.
+     * @type {boolean}
+     * @deprecated
+     */
+    get returnValue() {
+        return !pd(this).canceled
+    },
+    set returnValue(value) {
+        if (!value) {
+            setCancelFlag(pd(this))
+        }
+    },
+
+    /**
+     * Initialize this event object. But do nothing under event dispatching.
+     * @param {string} type The event type.
+     * @param {boolean} [bubbles=false] The flag to be possible to bubble up.
+     * @param {boolean} [cancelable=false] The flag to be possible to cancel.
+     * @deprecated
+     */
+    initEvent() {
+        // Do nothing.
     },
 }
 
@@ -370,13 +436,13 @@ export function wrapEvent(eventTarget, event) {
 }
 
 /**
- * Get the stopped flag of a given event.
+ * Get the immediateStopped flag of a given event.
  * @param {Event} event The event to get.
  * @returns {boolean} The flag to stop propagation immediately.
  * @private
  */
 export function isStopped(event) {
-    return pd(event).stopped
+    return pd(event).immediateStopped
 }
 
 /**
