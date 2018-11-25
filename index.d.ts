@@ -119,9 +119,7 @@ export interface EventListenerOptions {
     once?: boolean;
 }
 
-export type EventAttributes<T extends string> = {
-    [K in T]: (ev: Event) => any;
-};
+export type EventTargetListener = ((event: Event) => any) | { handleEvent(event: Event): void };
 
 export interface EventTarget {
     /**
@@ -133,7 +131,7 @@ export interface EventTarget {
      */
     addEventListener(
         eventName: string,
-        listener: (this: this, ev: Event) => any,
+        listener: EventTargetListener | null,
         options?: boolean | EventListenerOptions,
     ): boolean;
 
@@ -146,7 +144,7 @@ export interface EventTarget {
      */
     removeEventListener(
         eventName: string,
-        listener: (this: this, ev: Event) => any,
+        listener: EventTargetListener | null,
         options?: boolean | EventListenerOptions,
     ): boolean;
 
@@ -158,18 +156,25 @@ export interface EventTarget {
     dispatchEvent(event: Event | { type: string }): boolean;
 }
 
-type EventTargetConstructor<T extends string> = {
-    prototype: EventTarget & EventAttributes<T>;
-    new(): EventTarget & EventAttributes<T>;
+export type EventAttributes<T extends string> = {
+    [K in T]: (ev: Event) => any;
 };
 
-export const EventTarget: EventTargetConstructor<null> & {
+type ExEventTarget<T extends string> = EventTarget & EventAttributes<T>;
+
+type ExEventTargetConstructor<T extends string = ""> = {
+    prototype: ExEventTarget<T>;
+    new(): ExEventTarget<T>;
+};
+
+export const EventTarget: {
+    new<T extends string>(): ExEventTarget<T>;
     /**
      * The event target wrapper to be used when extending objects.
      * @param events Optional event attributes (e.g. passing in `"click"` adds `onclick` to prototype).
      */
-    <T extends string = null>(events: string[]): EventTargetConstructor<T>;
-    <T extends string = null>(...events: string[]): EventTargetConstructor<T>;
+    <T extends string>(events: string[]): ExEventTargetConstructor<T>;
+    <T extends string>(...events: string[]): ExEventTargetConstructor<T>;
 };
 export default EventTarget;
 
