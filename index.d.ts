@@ -9,12 +9,17 @@ export interface Event {
     /**
      * The target of this event.
      */
-    readonly target: EventTarget;
+    readonly target: EventTarget | null;
+
+    /**
+     * The current target of this event.
+     */
+    readonly currentTarget: EventTarget | null;
 
     /**
      * The target of this event.
      */
-    readonly currentTarget: EventTarget;
+    readonly srcElement: EventTarget | null;
 
     /**
      * The composed path of this event.
@@ -30,6 +35,11 @@ export interface Event {
      * Constant of CAPTURING_PHASE.
      */
     readonly CAPTURING_PHASE: number;
+
+    /**
+     * Constant of BUBBLING_PHASE.
+     */
+    readonly BUBBLING_PHASE: number;
 
     /**
      * Constant of AT_TARGET.
@@ -52,9 +62,25 @@ export interface Event {
     stopImmediatePropagation(): void;
 
     /**
+     * Initialize event.
+     * @deprecated
+     */
+    initEvent(type: string, bubbles?: boolean, cancelable?: boolean): void;
+
+    /**
      * The flag indicating bubbling.
      */
     readonly bubbles: boolean;
+
+    /**
+     * Stop event bubbling.
+     */
+    cancelBubble: boolean;
+
+    /**
+     * Set or get cancellation flag.
+     */
+    returnValue: boolean;
 
     /**
      * The flag indicating whether the event can be canceled.
@@ -93,6 +119,10 @@ export interface EventListenerOptions {
     once?: boolean;
 }
 
+export type EventAttributes<T extends string> = {
+    [K in T]: (ev: Event) => any;
+};
+
 export interface EventTarget {
     /**
      * Add a given listener to this event target.
@@ -128,14 +158,18 @@ export interface EventTarget {
     dispatchEvent(event: Event | { type: string }): boolean;
 }
 
-export const EventTarget: {
-    prototype: EventTarget;
+type EventTargetConstructor<T extends string> = {
+    prototype: EventTarget & EventAttributes<T>;
+    new(): EventTarget & EventAttributes<T>;
+};
 
+export const EventTarget: EventTargetConstructor<null> & {
     /**
-     * The event target wrapper.
+     * The event target wrapper to be used when extending objects.
      * @param events Optional event attributes (e.g. passing in `"click"` adds `onclick` to prototype).
      */
-    new(...events: string[]): EventTarget;
+    <T extends string = null>(events: string[]): EventTargetConstructor<T>;
+    <T extends string = null>(...events: string[]): EventTargetConstructor<T>;
 };
 export default EventTarget;
 
