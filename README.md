@@ -149,6 +149,57 @@ foo.onhello = (e) => {
 foo.dispatchEvent(new CustomEvent("hello", { detail: "detail" }))
 ```
 
+### Typescript
+
+Currently typescript does not allow mutation of any sort (joining, slicing and etc.) with string literals. It also does not support type mutation by method, therefore the previous example will **not work** without the following modifications:
+
+#### Working example #1
+```ts
+import { EventTarget, defineEventAttribute } from "event-target-shim";
+
+// Define a derived class.
+class Foo extends EventTarget<"onhello"> {
+    // ...
+}
+
+// Define `foo.onhello` property.
+defineEventAttribute(Foo.prototype, "hello")
+
+// Register event listeners.
+const foo = new Foo()
+foo.addEventListener("hello", (e) => {
+    console.log("hello", e)
+})
+foo.onhello = (e) => {
+    console.log("onhello", e)
+}
+
+// Dispatching events
+foo.dispatchEvent(new CustomEvent("hello", { detail: "detail" }))
+```
+
+#### Working example #2
+```ts
+import { EventTarget, defineEventAttribute } from "event-target-shim";
+
+// Define a derived class.
+class Foo extends EventTarget<"onhello">("hello") {
+    // ...
+}
+
+// Register event listeners.
+const foo = new Foo()
+foo.addEventListener("hello", (e) => {
+    console.log("hello", e)
+})
+foo.onhello = (e) => {
+    console.log("onhello", e)
+}
+
+// Dispatching events
+foo.dispatchEvent(new CustomEvent("hello", { detail: "detail" }))
+```
+
 ### ES5
 
 > https://jsfiddle.net/522zc9de/
