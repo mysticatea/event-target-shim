@@ -19,7 +19,7 @@ export interface Event {
     /**
      * The target of this event.
      */
-    readonly srcElement: EventTarget | null;
+    readonly srcElement: any | null;
 
     /**
      * The composed path of this event.
@@ -121,6 +121,11 @@ export interface EventListenerOptions {
 
 export type EventTargetListener = ((event: Event) => any) | { handleEvent(event: Event): void };
 
+export interface PartialEvent extends Partial<Event> {
+    type: string;
+    [key: string]: any;
+}
+
 export interface EventTarget {
     /**
      * Add a given listener to this event target.
@@ -133,7 +138,7 @@ export interface EventTarget {
         eventName: string,
         listener: EventTargetListener | null,
         options?: boolean | EventListenerOptions,
-    ): boolean;
+    ): void;
 
     /**
      * Remove a given listener from this event target.
@@ -146,14 +151,14 @@ export interface EventTarget {
         eventName: string,
         listener: EventTargetListener | null,
         options?: boolean | EventListenerOptions,
-    ): boolean;
+    ): void;
 
     /**
      * Dispatch a given event.
      * @param event The event to dispatch.
      * @returns `false` if canceled.
      */
-    dispatchEvent(event: Event | { type: string }): boolean;
+    dispatchEvent(event: PartialEvent): boolean;
 }
 
 export type EventAttributes<T extends string> = {
