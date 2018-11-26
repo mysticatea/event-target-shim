@@ -151,7 +151,7 @@ foo.dispatchEvent(new CustomEvent("hello", { detail: "detail" }))
 
 ### Typescript
 
-Currently typescript does not allow mutation of any sort (joining, slicing and etc.) with string literals. It also does not support type mutation by method, therefore the previous example will **not work** without the following modifications:
+Currently typescript does not support type mutation by method, therefore the previous example will **not work** without the following modifications:
 
 #### Working example #1
 ```ts
@@ -177,6 +177,8 @@ foo.onhello = (e) => {
 // Dispatching events
 foo.dispatchEvent(new CustomEvent("hello", { detail: "detail" }))
 ```
+
+In the future, if typescript adds support to string literal mutation (joining, slicing and etc.), it should be possible to automatically infer `onhello` type from `hello`. However, until then you are stuck with this:
 
 #### Working example #2
 ```ts
