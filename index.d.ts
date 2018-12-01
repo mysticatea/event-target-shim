@@ -135,7 +135,6 @@ export interface EventTarget {
      * @param eventName The event name to add.
      * @param listener The listener to add.
      * @param options The options for this listener.
-     * @returns `true` if the listener was actually added.
      */
     addEventListener(
         eventName: string,
@@ -148,7 +147,6 @@ export interface EventTarget {
      * @param eventName The event name to remove.
      * @param listener The listener to remove.
      * @param options The options for this listener.
-     * @returns `true` if the listener was actually removed.
      */
     removeEventListener(
         eventName: string,
