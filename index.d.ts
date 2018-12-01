@@ -115,6 +115,9 @@ export interface Event {
 
 export interface EventListenerOptions {
     capture?: boolean;
+}
+
+export interface AddEventListenerOptions extends EventListenerOptions {
     passive?: boolean;
     once?: boolean;
 }
@@ -137,7 +140,7 @@ export interface EventTarget {
     addEventListener(
         eventName: string,
         listener: EventTargetListener | null,
-        options?: boolean | EventListenerOptions,
+        options?: boolean | AddEventListenerOptions,
     ): void;
 
     /**
