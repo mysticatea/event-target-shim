@@ -163,7 +163,7 @@ export interface EventTarget {
 }
 
 type EventAttributes<T extends string> = {
-    [K in T]: (ev: Event) => any;
+    [K in T]: ((ev: Event) => any) | null;
 };
 
 type EventTargetConstructor = {
