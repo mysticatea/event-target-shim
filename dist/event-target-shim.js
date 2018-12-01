@@ -14,7 +14,8 @@ Object.defineProperty(exports, '__esModule', { value: true });
  * @property {number} eventPhase The current event phase.
  * @property {EventTarget|null} currentTarget The current event target.
  * @property {boolean} canceled The flag to prevent default.
- * @property {boolean} stopped The flag to stop propagation immediately.
+ * @property {boolean} stopped The flag to stop propagation.
+ * @property {boolean} immediateStopped The flag to stop propagation immediately.
  * @property {Function|null} passiveListener The listener if the current listener is passive. Otherwise this is null.
  * @property {number} timeStamp The unix time.
  * @private
@@ -42,8 +43,39 @@ const wrappers = new WeakMap();
  */
 function pd(event) {
     const retv = privateData.get(event);
-    console.assert(retv != null, "'this' is expected an Event object, but got", event);
+    console.assert(
+        retv != null,
+        "'this' is expected an Event object, but got",
+        event,
+    );
     return retv
+}
+
+/**
+ * https://dom.spec.whatwg.org/#set-the-canceled-flag
+ * @param data {PrivateData} private data.
+ */
+function setCancelFlag(data) {
+    if (data.passiveListener != null) {
+        if (
+            typeof console !== "undefined" &&
+            typeof console.error === "function"
+        ) {
+            console.error(
+                "Unable to preventDefault inside passive event listener invocation.",
+                data.passiveListener,
+            );
+        }
+        return
+    }
+    if (!data.event.cancelable) {
+        return
+    }
+
+    data.canceled = true;
+    if (typeof data.event.preventDefault === "function") {
+        data.event.preventDefault();
+    }
 }
 
 /**
@@ -64,6 +96,7 @@ function Event(eventTarget, event) {
         currentTarget: eventTarget,
         canceled: false,
         stopped: false,
+        immediateStopped: false,
         passiveListener: null,
         timeStamp: event.timeStamp || Date.now(),
     });
@@ -164,6 +197,8 @@ Event.prototype = {
      */
     stopPropagation() {
         const data = pd(this);
+
+        data.stopped = true;
         if (typeof data.event.stopPropagation === "function") {
             data.event.stopPropagation();
         }
@@ -177,6 +212,7 @@ Event.prototype = {
         const data = pd(this);
 
         data.stopped = true;
+        data.immediateStopped = true;
         if (typeof data.event.stopImmediatePropagation === "function") {
             data.event.stopImmediatePropagation();
         }
@@ -203,19 +239,7 @@ Event.prototype = {
      * @returns {void}
      */
     preventDefault() {
-        const data = pd(this);
-        if (data.passiveListener != null) {
-            console.warn("Event#preventDefault() was called from a passive listener:", data.passiveListener);
-            return
-        }
-        if (!data.event.cancelable) {
-            return
-        }
-
-        data.canceled = true;
-        if (typeof data.event.preventDefault === "function") {
-            data.event.preventDefault();
-        }
+        setCancelFlag(pd(this));
     },
 
     /**
@@ -241,10 +265,68 @@ Event.prototype = {
     get timeStamp() {
         return pd(this).timeStamp
     },
+
+    /**
+     * The target of this event.
+     * @type {EventTarget}
+     * @deprecated
+     */
+    get srcElement() {
+        return pd(this).eventTarget
+    },
+
+    /**
+     * The flag to stop event bubbling.
+     * @type {boolean}
+     * @deprecated
+     */
+    get cancelBubble() {
+        return pd(this).stopped
+    },
+    set cancelBubble(value) {
+        if (!value) {
+            return
+        }
+        const data = pd(this);
+
+        data.stopped = true;
+        if (typeof data.event.cancelBubble === "boolean") {
+            data.event.cancelBubble = true;
+        }
+    },
+
+    /**
+     * The flag to indicate cancellation state.
+     * @type {boolean}
+     * @deprecated
+     */
+    get returnValue() {
+        return !pd(this).canceled
+    },
+    set returnValue(value) {
+        if (!value) {
+            setCancelFlag(pd(this));
+        }
+    },
+
+    /**
+     * Initialize this event object. But do nothing under event dispatching.
+     * @param {string} type The event type.
+     * @param {boolean} [bubbles=false] The flag to be possible to bubble up.
+     * @param {boolean} [cancelable=false] The flag to be possible to cancel.
+     * @deprecated
+     */
+    initEvent() {
+        // Do nothing.
+    },
 };
 
 // `constructor` is not enumerable.
-Object.defineProperty(Event.prototype, "constructor", { value: Event, configurable: true, writable: true });
+Object.defineProperty(Event.prototype, "constructor", {
+    value: Event,
+    configurable: true,
+    writable: true,
+});
 
 // Ensure `event instanceof window.Event` is `true`.
 if (typeof window !== "undefined" && typeof window.Event !== "undefined") {
@@ -317,11 +399,13 @@ function defineWrapper(BaseEvent, proto) {
         const key = keys[i];
         if (!(key in BaseEvent.prototype)) {
             const descriptor = Object.getOwnPropertyDescriptor(proto, key);
-            const isFunc = (typeof descriptor.value === "function");
+            const isFunc = typeof descriptor.value === "function";
             Object.defineProperty(
                 CustomEvent.prototype,
                 key,
-                isFunc ? defineCallDescriptor(key) : defineRedirectDescriptor(key)
+                isFunc
+                    ? defineCallDescriptor(key)
+                    : defineRedirectDescriptor(key),
             );
         }
     }
@@ -361,13 +445,13 @@ function wrapEvent(eventTarget, event) {
 }
 
 /**
- * Get the stopped flag of a given event.
+ * Get the immediateStopped flag of a given event.
  * @param {Event} event The event to get.
  * @returns {boolean} The flag to stop propagation immediately.
  * @private
  */
 function isStopped(event) {
-    return pd(event).stopped
+    return pd(event).immediateStopped
 }
 
 /**
@@ -442,7 +526,9 @@ function isObject(x) {
 function getListeners(eventTarget) {
     const listeners = listenersMap.get(eventTarget);
     if (listeners == null) {
-        throw new TypeError("'this' is expected an EventTarget object, but got another value.")
+        throw new TypeError(
+            "'this' is expected an EventTarget object, but got another value.",
+        )
     }
     return listeners
 }
@@ -481,15 +567,12 @@ function defineEventAttributeDescriptor(eventName) {
                     // Remove old value.
                     if (prev !== null) {
                         prev.next = node.next;
-                    }
-                    else if (node.next !== null) {
+                    } else if (node.next !== null) {
                         listeners.set(eventName, node.next);
-                    }
-                    else {
+                    } else {
                         listeners.delete(eventName);
                     }
-                }
-                else {
+                } else {
                     prev = node;
                 }
 
@@ -507,8 +590,7 @@ function defineEventAttributeDescriptor(eventName) {
                 };
                 if (prev === null) {
                     listeners.set(eventName, newNode);
-                }
-                else {
+                } else {
                     prev.next = newNode;
                 }
             }
@@ -525,7 +607,11 @@ function defineEventAttributeDescriptor(eventName) {
  * @returns {void}
  */
 function defineEventAttribute(eventTargetPrototype, eventName) {
-    Object.defineProperty(eventTargetPrototype, `on${eventName}`, defineEventAttributeDescriptor(eventName));
+    Object.defineProperty(
+        eventTargetPrototype,
+        `on${eventName}`,
+        defineEventAttributeDescriptor(eventName),
+    );
 }
 
 /**
@@ -541,7 +627,11 @@ function defineCustomEventTarget(eventNames) {
     }
 
     CustomEventTarget.prototype = Object.create(EventTarget.prototype, {
-        constructor: { value: CustomEventTarget, configurable: true, writable: true },
+        constructor: {
+            value: CustomEventTarget,
+            configurable: true,
+            writable: true,
+        },
     });
 
     for (let i = 0; i < eventNames.length; ++i) {
@@ -591,11 +681,11 @@ EventTarget.prototype = {
      * @param {string} eventName The event name to add.
      * @param {Function} listener The listener to add.
      * @param {boolean|{capture?:boolean,passive?:boolean,once?:boolean}} [options] The options for this listener.
-     * @returns {boolean} `true` if the listener was added actually.
+     * @returns {void}
      */
     addEventListener(eventName, listener, options) {
         if (listener == null) {
-            return false
+            return
         }
         if (typeof listener !== "function" && !isObject(listener)) {
             throw new TypeError("'listener' should be a function or an object.")
@@ -603,8 +693,10 @@ EventTarget.prototype = {
 
         const listeners = getListeners(this);
         const optionsIsObj = isObject(options);
-        const capture = optionsIsObj ? Boolean(options.capture) : Boolean(options);
-        const listenerType = (capture ? CAPTURE : BUBBLE);
+        const capture = optionsIsObj
+            ? Boolean(options.capture)
+            : Boolean(options);
+        const listenerType = capture ? CAPTURE : BUBBLE;
         const newNode = {
             listener,
             listenerType,
@@ -617,15 +709,18 @@ EventTarget.prototype = {
         let node = listeners.get(eventName);
         if (node === undefined) {
             listeners.set(eventName, newNode);
-            return true
+            return
         }
 
         // Traverse to the tail while checking duplication..
         let prev = null;
         while (node != null) {
-            if (node.listener === listener && node.listenerType === listenerType) {
+            if (
+                node.listener === listener &&
+                node.listenerType === listenerType
+            ) {
                 // Should ignore duplication.
-                return false
+                return
             }
             prev = node;
             node = node.next;
@@ -633,7 +728,6 @@ EventTarget.prototype = {
 
         // Add it.
         prev.next = newNode;
-        return true
     },
 
     /**
@@ -641,38 +735,39 @@ EventTarget.prototype = {
      * @param {string} eventName The event name to remove.
      * @param {Function} listener The listener to remove.
      * @param {boolean|{capture?:boolean,passive?:boolean,once?:boolean}} [options] The options for this listener.
-     * @returns {boolean} `true` if the listener was removed actually.
+     * @returns {void}
      */
     removeEventListener(eventName, listener, options) {
         if (listener == null) {
-            return false
+            return
         }
 
         const listeners = getListeners(this);
-        const capture = isObject(options) ? Boolean(options.capture) : Boolean(options);
-        const listenerType = (capture ? CAPTURE : BUBBLE);
+        const capture = isObject(options)
+            ? Boolean(options.capture)
+            : Boolean(options);
+        const listenerType = capture ? CAPTURE : BUBBLE;
 
         let prev = null;
         let node = listeners.get(eventName);
         while (node != null) {
-            if (node.listener === listener && node.listenerType === listenerType) {
+            if (
+                node.listener === listener &&
+                node.listenerType === listenerType
+            ) {
                 if (prev !== null) {
                     prev.next = node.next;
-                }
-                else if (node.next !== null) {
+                } else if (node.next !== null) {
                     listeners.set(eventName, node.next);
-                }
-                else {
+                } else {
                     listeners.delete(eventName);
                 }
-                return true
+                return
             }
 
             prev = node;
             node = node.next;
         }
-
-        return false
     },
 
     /**
@@ -680,9 +775,9 @@ EventTarget.prototype = {
      * @param {Event|{type:string}} event The event to dispatch.
      * @returns {boolean} `false` if canceled.
      */
-    dispatchEvent(event) { //eslint-disable-line complexity
+    dispatchEvent(event) {
         if (event == null || typeof event.type !== "string") {
-            throw new TypeError("\"event.type\" should be a string.")
+            throw new TypeError('"event.type" should be a string.')
         }
 
         // If listeners aren't registered, terminate.
@@ -704,33 +799,35 @@ EventTarget.prototype = {
             if (node.once) {
                 if (prev !== null) {
                     prev.next = node.next;
-                }
-                else if (node.next !== null) {
+                } else if (node.next !== null) {
                     listeners.set(eventName, node.next);
-                }
-                else {
+                } else {
                     listeners.delete(eventName);
                 }
-            }
-            else {
+            } else {
                 prev = node;
             }
 
             // Call this listener
-            setPassiveListener(wrappedEvent, (node.passive ? node.listener : null));
+            setPassiveListener(
+                wrappedEvent,
+                node.passive ? node.listener : null,
+            );
             if (typeof node.listener === "function") {
                 try {
                     node.listener.call(this, wrappedEvent);
-                }
-                catch (err) {
-                    /*eslint-disable no-console */
-                    if (typeof console !== "undefined" && typeof console.error === "function") {
+                } catch (err) {
+                    if (
+                        typeof console !== "undefined" &&
+                        typeof console.error === "function"
+                    ) {
                         console.error(err);
                     }
-                    /*eslint-enable no-console */
                 }
-            }
-            else if (node.listenerType !== ATTRIBUTE && typeof node.listener.handleEvent === "function") {
+            } else if (
+                node.listenerType !== ATTRIBUTE &&
+                typeof node.listener.handleEvent === "function"
+            ) {
                 node.listener.handleEvent(wrappedEvent);
             }
 
@@ -750,10 +847,17 @@ EventTarget.prototype = {
 };
 
 // `constructor` is not enumerable.
-Object.defineProperty(EventTarget.prototype, "constructor", { value: EventTarget, configurable: true, writable: true });
+Object.defineProperty(EventTarget.prototype, "constructor", {
+    value: EventTarget,
+    configurable: true,
+    writable: true,
+});
 
 // Ensure `eventTarget instanceof window.EventTarget` is `true`.
-if (typeof window !== "undefined" && typeof window.EventTarget !== "undefined") {
+if (
+    typeof window !== "undefined" &&
+    typeof window.EventTarget !== "undefined"
+) {
     Object.setPrototypeOf(EventTarget.prototype, window.EventTarget.prototype);
 }
 
