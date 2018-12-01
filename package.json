@@ -1,6 +1,6 @@
 {
   "name": "event-target-shim",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "An implementation of WHATWG EventTarget interface.",
   "main": "dist/event-target-shim",
   "types": "index.d.ts",
