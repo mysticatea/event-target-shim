@@ -113,8 +113,22 @@ function doBasicTests() {
         assert(lastEvent.AT_TARGET === 2)
         assert(lastEvent.BUBBLING_PHASE === 3)
         assert(listenerThis === this.target)
-        assert(this.target.removeEventListener("test", listener2))
-        assert(this.target.removeEventListener("test", listener))
+
+        this.target.removeEventListener("test", listener2)
+        listener.reset()
+        listener2.reset()
+
+        this.target.dispatchEvent(event)
+        assert(listener.calls.length === 1)
+        assert(listener2.calls.length === 0)
+
+        this.target.removeEventListener("test", listener)
+        listener.reset()
+        listener2.reset()
+
+        this.target.dispatchEvent(event)
+        assert(listener.calls.length === 0)
+        assert(listener2.calls.length === 0)
     })
 
     it("should not call removed listeners.", /* @this */ function() {
@@ -135,8 +149,12 @@ function doBasicTests() {
         this.target.dispatchEvent(event)
 
         assert(listener.calls.length === 1)
-        assert(this.target.removeEventListener("test", listener))
-        assert(this.target.removeEventListener("test", listener) === false)
+
+        this.target.removeEventListener("test", listener)
+        listener.reset()
+        this.target.dispatchEvent(event)
+
+        assert(listener.calls.length === 0)
     })
 
     it("should allow duplicate in listeners if those capture flag are different.", /* @this */ function() {
@@ -147,8 +165,18 @@ function doBasicTests() {
         this.target.dispatchEvent(event)
 
         assert(listener.calls.length === 2)
-        assert(this.target.removeEventListener("test", listener, false))
-        assert(this.target.removeEventListener("test", listener, true))
+
+        this.target.removeEventListener("test", listener, false)
+        listener.reset()
+        this.target.dispatchEvent(event)
+
+        assert(listener.calls.length === 1)
+
+        this.target.removeEventListener("test", listener, true)
+        listener.reset()
+        this.target.dispatchEvent(event)
+
+        assert(listener.calls.length === 0)
     })
 
     it("should not call registered listeners if its type is different.", /* @this */ function() {
@@ -234,7 +262,9 @@ function doBasicTests() {
     })
 
     it("should call registered listeners if a listener removed me.", /* @this */ function() {
-        const listener1 = spy(() => this.target.removeEventListener(listener1))
+        const listener1 = spy(() => {
+            this.target.removeEventListener("test", listener1)
+        })
         const listener2 = spy()
         const event = createEvent("test")
         this.target.addEventListener("test", listener1)
@@ -244,6 +274,13 @@ function doBasicTests() {
         assert(listener1.calls.length === 1)
         assert(listener2.calls.length === 1)
         assert(result === true)
+
+        listener1.reset()
+        listener2.reset()
+
+        this.target.dispatchEvent(event)
+        assert(listener1.calls.length === 0)
+        assert(listener2.calls.length === 1)
     })
 
     it("should be possible to call `dispatchEvent()` with a plain object.", /* @this */ function() {
@@ -339,7 +376,12 @@ function doBasicTests() {
         assert(lastEvent.timeStamp === event.timeStamp)
         assert(lastEvent.detail === "detail")
         assert(listenerThis === listener)
-        assert(this.target.removeEventListener("test", listener))
+
+        listener.handleEvent.reset()
+        this.target.removeEventListener("test", listener)
+        this.target.dispatchEvent(event)
+
+        assert(listener.handleEvent.calls.length === 0)
     })
 
     it('should not call removed listeners (an object with "handleEvent" method).', /* @this */ function() {
@@ -421,7 +463,6 @@ function doBasicTests() {
         this.target.dispatchEvent(createEvent("test"))
 
         assert(listener.calls.length === 1)
-        assert(this.target.removeEventListener("test", listener) === false)
     })
 
     it("should allow duplicate listeners if those capture flag are different (`{}` and `true`).", /* @this */ function() {
@@ -432,8 +473,13 @@ function doBasicTests() {
         this.target.dispatchEvent(event)
 
         assert(listener.calls.length === 2)
-        assert(this.target.removeEventListener("test", listener, false))
-        assert(this.target.removeEventListener("test", listener, true))
+
+        this.target.removeEventListener("test", listener, false)
+        this.target.removeEventListener("test", listener, true)
+        listener.reset()
+        this.target.dispatchEvent(event)
+
+        assert(listener.calls.length === 0)
     })
 
     it("should allow duplicate listeners if those capture flag are different (`{capture: true}` and `false`).", /* @this */ function() {
@@ -444,8 +490,13 @@ function doBasicTests() {
         this.target.dispatchEvent(event)
 
         assert(listener.calls.length === 2)
-        assert(this.target.removeEventListener("test", listener, false))
-        assert(this.target.removeEventListener("test", listener, true))
+
+        this.target.removeEventListener("test", listener, false)
+        this.target.removeEventListener("test", listener, true)
+        listener.reset()
+        this.target.dispatchEvent(event)
+
+        assert(listener.calls.length === 0)
     })
 
     it("should disallow duplicate listeners if those capture flag are same (`{}` and `false`).", /* @this */ function() {
@@ -456,16 +507,12 @@ function doBasicTests() {
         this.target.dispatchEvent(event)
 
         assert(listener.calls.length === 1)
-        assert(
-            this.target.removeEventListener("test", listener, {
-                capture: false,
-            }),
-        )
-        assert(
-            this.target.removeEventListener("test", listener, {
-                capture: false,
-            }) === false,
-        )
+
+        this.target.removeEventListener("test", listener, { capture: false })
+        listener.reset()
+        this.target.dispatchEvent(event)
+
+        assert(listener.calls.length === 0)
     })
 
     it("should disallow duplicate listeners if those capture flag are same (`{capture: true}` and `true`).", /* @this */ function() {
@@ -476,16 +523,12 @@ function doBasicTests() {
         this.target.dispatchEvent(event)
 
         assert(listener.calls.length === 1)
-        assert(
-            this.target.removeEventListener("test", listener, {
-                capture: true,
-            }),
-        )
-        assert(
-            this.target.removeEventListener("test", listener, {
-                capture: true,
-            }) === false,
-        )
+
+        this.target.removeEventListener("test", listener, { capture: true })
+        listener.reset()
+        this.target.dispatchEvent(event)
+
+        assert(listener.calls.length === 0)
     })
 
     it("a result of `dispatchEvent()` should be true even if had canceled by passive listeners.", /* @this */ function() {
@@ -549,8 +592,6 @@ function doBasicTests() {
 
         assert(listener1.calls.length === 1)
         assert(listener2.calls.length === 1)
-        assert(this.target.removeEventListener("test", listener1) === false)
-        assert(this.target.removeEventListener("test", listener2) === false)
     })
 
     it("should can get a value from original event property even if the property is a getter of prototype.", /* @this */ function() {

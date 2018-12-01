@@ -200,11 +200,11 @@ EventTarget.prototype = {
      * @param {string} eventName The event name to add.
      * @param {Function} listener The listener to add.
      * @param {boolean|{capture?:boolean,passive?:boolean,once?:boolean}} [options] The options for this listener.
-     * @returns {boolean} `true` if the listener was added actually.
+     * @returns {void}
      */
     addEventListener(eventName, listener, options) {
         if (listener == null) {
-            return false
+            return
         }
         if (typeof listener !== "function" && !isObject(listener)) {
             throw new TypeError("'listener' should be a function or an object.")
@@ -228,7 +228,7 @@ EventTarget.prototype = {
         let node = listeners.get(eventName)
         if (node === undefined) {
             listeners.set(eventName, newNode)
-            return true
+            return
         }
 
         // Traverse to the tail while checking duplication..
@@ -239,7 +239,7 @@ EventTarget.prototype = {
                 node.listenerType === listenerType
             ) {
                 // Should ignore duplication.
-                return false
+                return
             }
             prev = node
             node = node.next
@@ -247,7 +247,6 @@ EventTarget.prototype = {
 
         // Add it.
         prev.next = newNode
-        return true
     },
 
     /**
@@ -255,11 +254,11 @@ EventTarget.prototype = {
      * @param {string} eventName The event name to remove.
      * @param {Function} listener The listener to remove.
      * @param {boolean|{capture?:boolean,passive?:boolean,once?:boolean}} [options] The options for this listener.
-     * @returns {boolean} `true` if the listener was removed actually.
+     * @returns {void}
      */
     removeEventListener(eventName, listener, options) {
         if (listener == null) {
-            return false
+            return
         }
 
         const listeners = getListeners(this)
@@ -282,14 +281,12 @@ EventTarget.prototype = {
                 } else {
                     listeners.delete(eventName)
                 }
-                return true
+                return
             }
 
             prev = node
             node = node.next
         }
-
-        return false
     },
 
     /**
