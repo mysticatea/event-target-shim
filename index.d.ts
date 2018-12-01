@@ -166,6 +166,11 @@ type EventAttributes<T extends string> = {
     [K in T]: (ev: Event) => any;
 };
 
+type EventTargetConstructor = {
+    prototype: EventTarget;
+    new(): EventTarget;
+};
+
 type ExEventTarget<T extends string> = EventTarget & EventAttributes<T>;
 
 type ExEventTargetConstructor<T extends string> = {
@@ -174,13 +179,16 @@ type ExEventTargetConstructor<T extends string> = {
 };
 
 export const EventTarget: {
-    new<T extends string = "">(): ExEventTarget<T>;
+    new(): EventTarget;
+    new<T extends string>(): ExEventTarget<T>;
     /**
      * The event target wrapper to be used when extending objects.
      * @param events Optional event attributes (e.g. passing in `"click"` adds `onclick` to prototype).
      */
-    <T extends string = "">(events: string[]): ExEventTargetConstructor<T>;
-    <T extends string = "">(...events: string[]): ExEventTargetConstructor<T>;
+    (events: string[]): EventTargetConstructor;
+    (...events: string[]): EventTargetConstructor;
+    <T extends string>(events: string[]): ExEventTargetConstructor<T>;
+    <T extends string>(...events: string[]): ExEventTargetConstructor<T>;
 };
 export default EventTarget;
 
