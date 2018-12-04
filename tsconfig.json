@@ -4,5 +4,10 @@
         "noEmit": true,
         "strict": true
     },
-    "exclude": ["test/types.ts"]
-}
+    "files": [
+        "test/types.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+} 

@@ -122,7 +122,7 @@ export interface AddEventListenerOptions extends EventListenerOptions {
     once?: boolean;
 }
 
-export type EventTargetListener = ((event: Event) => any) | { handleEvent(event: Event): void };
+export type EventTargetListener = ((event: Event) => void) | { handleEvent(event: Event): void };
 
 export interface PartialEvent extends Partial<Event> {
     type: string;
@@ -163,7 +163,7 @@ export interface EventTarget {
 }
 
 type EventAttributes<T extends string> = {
-    [K in T]: (ev: Event) => any;
+    [K in T]: ((ev: Event) => void) | null;
 };
 
 type EventTargetConstructor = {
