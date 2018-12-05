@@ -1,1 +1,5 @@
-require("@babel/register")({ extensions: [".js", ".mjs"] })
+require("@babel/register")({
+    babelrc: false,
+    extensions: [".js", ".mjs"],
+    plugins: ["@babel/plugin-transform-modules-commonjs"],
+})
