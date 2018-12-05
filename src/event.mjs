@@ -37,7 +37,7 @@ function pd(event) {
     console.assert(
         retv != null,
         "'this' is expected an Event object, but got",
-        event,
+        event
     )
     return retv
 }
@@ -54,7 +54,7 @@ function setCancelFlag(data) {
         ) {
             console.error(
                 "Unable to preventDefault inside passive event listener invocation.",
-                data.passiveListener,
+                data.passiveListener
             )
         }
         return
@@ -396,7 +396,7 @@ function defineWrapper(BaseEvent, proto) {
                 key,
                 isFunc
                     ? defineCallDescriptor(key)
-                    : defineRedirectDescriptor(key),
+                    : defineRedirectDescriptor(key)
             )
         }
     }

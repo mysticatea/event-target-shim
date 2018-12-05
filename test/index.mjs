@@ -63,13 +63,13 @@ function doBasicTests() {
         "should be instanceof `window.EventTarget`.",
         /* @this */ function() {
             assert(this.target instanceof window.EventTarget)
-        },
+        }
     )
     ;(HAS_EVENT_TARGET_INTERFACE ? it : xit)(
         "should not equal `EventTarget` and `window.EventTarget`.",
         () => {
             assert(EventTarget !== window.EventTarget)
-        },
+        }
     )
 
     it("should call registered listeners on called `dispatchEvent()`.", /* @this */ function() {
@@ -320,7 +320,7 @@ function doBasicTests() {
 
             assert(lastEvent != null)
             assert(lastEvent.detail === event.detail)
-        },
+        }
     )
 
     it("cannot call a class as a function", () => {
@@ -685,7 +685,7 @@ function doBasicTests() {
             if (hasCancelBubble) {
                 const d = Object.getOwnPropertyDescriptor(
                     Object.getPrototypeOf(event),
-                    "cancelBubble",
+                    "cancelBubble"
                 )
                 Object.defineProperty(event, "cancelBubble", {
                     get: () => d.get.call(event),
@@ -702,7 +702,7 @@ function doBasicTests() {
             assert.deepStrictEqual(values, [false, true, true])
             assert.strictEqual(
                 hasCancelBubble ? setCancelBubble.calls.length : 1,
-                1,
+                1
             )
         })
     })
@@ -724,7 +724,7 @@ function doBasicTests() {
         assert.deepStrictEqual(values, [false, true])
         assert.strictEqual(
             event.cancelBubble,
-            hasCancelBubble ? true : undefined,
+            hasCancelBubble ? true : undefined
         )
     })
 
@@ -745,7 +745,7 @@ function doBasicTests() {
         assert.deepStrictEqual(values, [false, true])
         assert.strictEqual(
             event.cancelBubble,
-            hasCancelBubble ? true : undefined,
+            hasCancelBubble ? true : undefined
         )
     })
 
@@ -772,7 +772,7 @@ function doBasicTests() {
         assert.strictEqual(
             event.returnValue,
             hasReturnValue ? false : undefined,
-            5,
+            5
         )
     })
 
@@ -795,7 +795,7 @@ function doBasicTests() {
         assert.strictEqual(
             event.returnValue,
             hasReturnValue ? true : undefined,
-            5,
+            5
         )
     })
 
@@ -818,7 +818,7 @@ function doBasicTests() {
         assert.strictEqual(
             event.returnValue,
             hasReturnValue ? true : undefined,
-            5,
+            5
         )
     })
 
@@ -867,7 +867,7 @@ function doAttributeListenerTests() {
         for (let i = 0; i < keys.length; ++i) {
             assert(
                 expectedKeys.indexOf(keys[i]) !== -1,
-                `Found an unknown key '${keys[i]}'`,
+                `Found an unknown key '${keys[i]}'`
             )
         }
     })

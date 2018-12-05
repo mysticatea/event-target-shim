@@ -46,7 +46,7 @@ function getListeners(eventTarget) {
     const listeners = listenersMap.get(eventTarget)
     if (listeners == null) {
         throw new TypeError(
-            "'this' is expected an EventTarget object, but got another value.",
+            "'this' is expected an EventTarget object, but got another value."
         )
     }
     return listeners
@@ -129,7 +129,7 @@ function defineEventAttribute(eventTargetPrototype, eventName) {
     Object.defineProperty(
         eventTargetPrototype,
         `on${eventName}`,
-        defineEventAttributeDescriptor(eventName),
+        defineEventAttributeDescriptor(eventName)
     )
 }
 
@@ -330,7 +330,7 @@ EventTarget.prototype = {
             // Call this listener
             setPassiveListener(
                 wrappedEvent,
-                node.passive ? node.listener : null,
+                node.passive ? node.listener : null
             )
             if (typeof node.listener === "function") {
                 try {
