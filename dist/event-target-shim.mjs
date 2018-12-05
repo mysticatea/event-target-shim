@@ -42,7 +42,7 @@ function pd(event) {
     console.assert(
         retv != null,
         "'this' is expected an Event object, but got",
-        event,
+        event
     );
     return retv
 }
@@ -59,7 +59,7 @@ function setCancelFlag(data) {
         ) {
             console.error(
                 "Unable to preventDefault inside passive event listener invocation.",
-                data.passiveListener,
+                data.passiveListener
             );
         }
         return
@@ -401,7 +401,7 @@ function defineWrapper(BaseEvent, proto) {
                 key,
                 isFunc
                     ? defineCallDescriptor(key)
-                    : defineRedirectDescriptor(key),
+                    : defineRedirectDescriptor(key)
             );
         }
     }
@@ -523,7 +523,7 @@ function getListeners(eventTarget) {
     const listeners = listenersMap.get(eventTarget);
     if (listeners == null) {
         throw new TypeError(
-            "'this' is expected an EventTarget object, but got another value.",
+            "'this' is expected an EventTarget object, but got another value."
         )
     }
     return listeners
@@ -606,7 +606,7 @@ function defineEventAttribute(eventTargetPrototype, eventName) {
     Object.defineProperty(
         eventTargetPrototype,
         `on${eventName}`,
-        defineEventAttributeDescriptor(eventName),
+        defineEventAttributeDescriptor(eventName)
     );
 }
 
@@ -807,7 +807,7 @@ EventTarget.prototype = {
             // Call this listener
             setPassiveListener(
                 wrappedEvent,
-                node.passive ? node.listener : null,
+                node.passive ? node.listener : null
             );
             if (typeof node.listener === "function") {
                 try {
