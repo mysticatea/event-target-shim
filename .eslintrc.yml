@@ -14,13 +14,16 @@ rules:
   import/newline-after-import: "off"
   import/first: "off"
 
-  # To reduce size for babel-translation.
-  no-restricted-syntax:
-    - error
-    - ClassDeclaration
-    - ClassExpression
-    - ForOfStatement
-    - BinaryExpression[left.operator='typeof'][right.value='object']
-  prefer-rest-params: "off"
-  prefer-spread: "off"
-  "@mysticatea/prefer-for-of": "off"
+overrides:
+  - files: src/*
+    rules:
+      # To reduce size for babel-translation.
+      no-restricted-syntax:
+        - error
+        - ClassDeclaration
+        - ClassExpression
+        - ForOfStatement
+        - BinaryExpression[left.operator='typeof'][right.value='object']
+      prefer-rest-params: "off"
+      prefer-spread: "off"
+      "@mysticatea/prefer-for-of": "off"

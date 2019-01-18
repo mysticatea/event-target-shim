@@ -665,8 +665,7 @@ function doBasicTests() {
         assert.strictEqual(listener.calls.length, 1)
     })
 
-    //
-    ;[true, false].forEach(bubbles => {
+    for (const bubbles of [true, false]) {
         it(`'event.cancelBubble' should apply to the original event object if 'bubbles' is ${bubbles}.`, /* @this */ function() {
             const values = []
             const listener = spy(event => {
@@ -705,7 +704,7 @@ function doBasicTests() {
                 1
             )
         })
-    })
+    }
 
     it("'event.cancelBubble` should be true after 'event.stopPropagation' is called.", /* @this */ function() {
         const values = []
@@ -859,15 +858,17 @@ function doAttributeListenerTests() {
             "onhello",
         ]
         const keys = []
+
+        //eslint-disable-next-line @mysticatea/prefer-for-of
         for (const key in this.target) {
             keys.push(key)
         }
 
         assert(keys.length === expectedKeys.length)
-        for (let i = 0; i < keys.length; ++i) {
+        for (const key of keys) {
             assert(
-                expectedKeys.indexOf(keys[i]) !== -1,
-                `Found an unknown key '${keys[i]}'`
+                expectedKeys.indexOf(key) !== -1,
+                `Found an unknown key '${key}'`
             )
         }
     })

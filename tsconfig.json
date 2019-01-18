@@ -5,9 +5,10 @@
         "strict": true
     },
     "files": [
-        "test/types.ts"
+        "index.d.ts",
+        "test/fixtures/types.ts"
     ],
     "exclude": [
         "node_modules"
     ]
-} 
+}

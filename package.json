@@ -21,11 +21,10 @@
     "build": "rollup -c scripts/rollup.config.js",
     "pretest": "npm run lint",
     "test": "run-s test:*",
-    "test:mocha": "nyc --require ./scripts/babel-register mocha test/index.mjs",
+    "test:mocha": "nyc --require ./scripts/babel-register mocha test/*.mjs",
     "test:karma": "karma start scripts/karma.conf.js --single-run",
-    "test:types": "tsc",
     "watch": "run-p watch:*",
-    "watch:mocha": "mocha test/index.mjs --require ./scripts/babel-register --watch --watch-extensions js,mjs --growl",
+    "watch:mocha": "mocha test/*.mjs --require ./scripts/babel-register --watch --watch-extensions js,mjs --growl",
     "watch:karma": "karma start scripts/karma.conf.js --watch",
     "codecov": "codecov"
   },
