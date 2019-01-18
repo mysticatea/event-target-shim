@@ -151,55 +151,81 @@ foo.dispatchEvent(new CustomEvent("hello", { detail: "detail" }))
 
 ### Typescript
 
-Currently typescript does not support type mutation by method, therefore the previous example will **not work** without the following modifications:
-
-#### Working example #1
 ```ts
 import { EventTarget, defineEventAttribute } from "event-target-shim";
 
-// Define a derived class.
-class Foo extends EventTarget<"onhello"> {
-    // ...
+// Define events
+type FooEvents = {
+    hello: CustomEvent
+}
+type FooEventAttributes = {
+    onhello: CustomEvent
 }
 
-// Define `foo.onhello` property.
+// Define a derived class.
+class Foo extends EventTarget<FooEvents, FooEventAttributes> {
+    // ...
+}
+// Define `foo.onhello` property's implementation.
 defineEventAttribute(Foo.prototype, "hello")
 
 // Register event listeners.
 const foo = new Foo()
 foo.addEventListener("hello", (e) => {
-    console.log("hello", e)
+    console.log("hello", e.detail)
 })
 foo.onhello = (e) => {
-    console.log("onhello", e)
+    console.log("onhello", e.detail)
 }
 
 // Dispatching events
 foo.dispatchEvent(new CustomEvent("hello", { detail: "detail" }))
 ```
 
-In the future, if typescript adds support to string literal mutation (joining, slicing and etc.), it should be possible to automatically infer `onhello` type from `hello`. However, until then you are stuck with this:
+Unfortunately, both `FooEvents` and `FooEventAttributes` are needed because TypeScript doesn't allow the mutation of string literal types. If TypeScript allowed us to compute `"onhello"` from `"hello"` in types, `FooEventAttributes` will be optional.
 
-#### Working example #2
+This `EventTarget` type is compatible with `EventTarget` interface of `lib.dom.d.ts`.
+
+#### To disallow unknown events
+
+By default, methods such as `addEventListener` accept unknown events. You can disallow unknown events by the third type parameter `"strict"`.
+
 ```ts
-import { EventTarget, defineEventAttribute } from "event-target-shim";
-
-// Define a derived class.
-class Foo extends EventTarget<"onhello">("hello") {
+type FooEvents = {
+    hello: CustomEvent
+}
+class Foo extends EventTarget<FooEvents, {}, "strict"> {
     // ...
 }
 
-// Register event listeners.
-const foo = new Foo()
+// OK because `hello` is defined in FooEvents.
 foo.addEventListener("hello", (e) => {
-    console.log("hello", e)
 })
-foo.onhello = (e) => {
-    console.log("onhello", e)
+// Error because `unknown` is not defined in FooEvents.
+foo.addEventListener("unknown", (e) => {
+})
+```
+
+However, if you use `"strict"` parameter, it loses compatibility with `EventTarget` interface of `lib.dom.d.ts`.
+
+#### To infer the type of `dispatchEvent()` method
+
+TypeScript cannot infer the event type of `dispatchEvent()` method properly from the argument in most cases. You can improve this behavior with the following steps:
+
+1. Use the third type parameter `"strict"`. This prevents inferring to `dispatchEvent<string>()`.
+2. Make the `type` property of event definitions stricter.
+
+```ts
+type FooEvents = {
+    hello: CustomEvent & { type: "hello" }
+    hey: Event & { type: "hey" }
+}
+class Foo extends EventTarget<FooEvents, {}, "strict"> {
+    // ...
 }
 
-// Dispatching events
-foo.dispatchEvent(new CustomEvent("hello", { detail: "detail" }))
+// Error because `detail` property is lacking.
+foo.dispatchEvent({ type: "hello" })
 ```
 
 ### ES5
