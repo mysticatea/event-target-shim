@@ -8,7 +8,7 @@ import {
 let a: EventTargetShim = new EventTargetShim()
 let b: EventTarget = new EventTargetShim()
 let c = new (EventTargetShim<{ test: Event }, { ontest: Event }>("test"))()
-let d = new (EventTargetShim())()
+let d = new (EventTargetShim("test"))()
 
 a.addEventListener("test", (event: EventShim) => { })
 a.addEventListener("test", (event: Event) => { })
@@ -89,7 +89,7 @@ const StrictCustomEventTarget = EventTargetShim<
     { test: TestEvent },
     { ontest: TestEvent },
     "strict"
->()
+>("test")
 const e = new StrictCustomEventTarget()
 
 e.addEventListener("test", e => { const e2: TestEvent = e })
@@ -113,7 +113,7 @@ b = e //@expected 2322
 const LooseCustomEventTarget = EventTargetShim<
     { test: TestEvent },
     { ontest: TestEvent }
->()
+>("test")
 const f = new LooseCustomEventTarget()
 
 f.addEventListener("test", e => { const e2: TestEvent = e })

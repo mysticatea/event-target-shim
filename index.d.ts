@@ -200,17 +200,6 @@ export const EventTarget: EventTargetConstructor & {
     >(): EventTarget<TEvents, TEventAttributes, TMode>
 
     /**
-     * Define an `EventTarget` constructor with attribute events.
-     * @param events Event types to define attribute events (e.g. passing in `"click"` adds `onclick` to prototype).
-     */
-    (events: string[]): EventTargetConstructor
-    /**
-     * Define an `EventTarget` constructor with attribute events.
-     * @param events Event types to define attribute events (e.g. passing in `"click"` adds `onclick` to prototype).
-     */
-    (...events: string[]): EventTargetConstructor
-
-    /**
      * Define an `EventTarget` constructor with attribute events and detailed event definition.
      *
      * Unfortunately, the second type parameter `TEventAttributes` was needed
@@ -224,10 +213,10 @@ export const EventTarget: EventTargetConstructor & {
      * @param events Optional event attributes (e.g. passing in `"click"` adds `onclick` to prototype).
      */
     <
-        TEvents extends EventTarget.EventDefinition,
-        TEventAttributes extends EventTarget.EventDefinition,
+        TEvents extends EventTarget.EventDefinition = {},
+        TEventAttributes extends EventTarget.EventDefinition = {},
         TMode extends EventTarget.Mode = "loose"
-    >(events: (keyof TEvents)[]): EventTargetConstructor<
+    >(events: string[]): EventTargetConstructor<
         TEvents,
         TEventAttributes,
         TMode
@@ -247,10 +236,10 @@ export const EventTarget: EventTargetConstructor & {
      * @param events Optional event attributes (e.g. passing in `"click"` adds `onclick` to prototype).
      */
     <
-        TEvents extends EventTarget.EventDefinition,
-        TEventAttributes extends EventTarget.EventDefinition,
+        TEvents extends EventTarget.EventDefinition = {},
+        TEventAttributes extends EventTarget.EventDefinition = {},
         TMode extends EventTarget.Mode = "loose"
-    >(...events: (keyof TEvents)[]): EventTargetConstructor<
+    >(event0: string, ...events: string[]): EventTargetConstructor<
         TEvents,
         TEventAttributes,
         TMode
@@ -301,7 +290,7 @@ export namespace EventTarget {
     /**
      * The type of listeners.
      */
-    export type Listener<TEvent = Event> =
+    export type Listener<TEvent> =
         | FunctionListener<TEvent>
         | ObjectListener<TEvent>
 
