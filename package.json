@@ -58,6 +58,7 @@
     "rollup-plugin-json": "^3.1.0",
     "rollup-plugin-node-resolve": "^4.0.0",
     "rollup-watch": "^4.3.1",
+    "type-tester": "^1.0.0",
     "typescript": "^3.2.4"
   },
   "repository": {
