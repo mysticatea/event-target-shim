@@ -22,7 +22,6 @@ export default [
         input: "src/event-target.mjs",
         output: {
             file: "dist/event-target-shim.mjs",
-            sourcemapFile: "dist/event-target-shim.mjs.map",
             sourcemap: true,
             format: "es",
             banner,
@@ -32,7 +31,6 @@ export default [
         input: "src/event-target.mjs",
         output: {
             file: "dist/event-target-shim.js",
-            sourcemapFile: "dist/event-target-shim.js.map",
             sourcemap: true,
             format: "cjs",
             banner,
@@ -43,7 +41,6 @@ export default [
         input: "src/event-target.mjs",
         output: {
             file: "dist/event-target-shim.umd.js",
-            sourcemapFile: "dist/event-target-shim.umd.js.map",
             sourcemap: true,
             format: "umd",
             name: "EventTargetShim",
