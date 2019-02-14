@@ -11,7 +11,7 @@ module.exports.EventTarget = module.exports["default"] = EventTarget
 module.exports.defineEventAttribute = defineEventAttribute
 `
 const umdOutro = `if (typeof module === "undefined" && typeof define === "undefined") {
-    const global = Function("return this")()
+    var global = Function("return this")()
     global.EventTargetShim = EventTarget
     global.EventTargetShim.defineEventAttribute = defineEventAttribute
 }
