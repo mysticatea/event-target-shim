@@ -16,6 +16,15 @@ const umdOutro = `if (typeof module === "undefined" && typeof define === "undefi
     global.EventTargetShim.defineEventAttribute = defineEventAttribute
 }
 `
+const babelPlugin = babel({
+    babelrc: false,
+    presets: [
+        [
+            "@babel/preset-env",
+            { modules: false, targets: { browsers: ["ie 11"] } },
+        ],
+    ],
+})
 
 export default [
     {
@@ -26,6 +35,7 @@ export default [
             format: "es",
             banner,
         },
+        plugins: [babelPlugin],
     },
     {
         input: "src/event-target.mjs",
@@ -36,6 +46,7 @@ export default [
             banner,
             outro: cjsOutro,
         },
+        plugins: [babelPlugin],
     },
     {
         input: "src/event-target.mjs",
@@ -47,15 +58,7 @@ export default [
             outro: umdOutro,
         },
         plugins: [
-            babel({
-                babelrc: false,
-                presets: [
-                    [
-                        "@babel/preset-env",
-                        { modules: false, targets: { browsers: ["ie 11"] } },
-                    ],
-                ],
-            }),
+            babelPlugin,
             minify({
                 comments: false,
                 banner,
