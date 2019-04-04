@@ -24,7 +24,7 @@ export interface Event {
      * The target of this event.
      * @deprecated
      */
-    readonly srcElement: any | null
+    readonly srcElement: EventTarget<{}, {}, "standard"> | null
 
     /**
      * The composed path of this event.
