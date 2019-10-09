@@ -43,11 +43,11 @@ const wrappers = new WeakMap();
  */
 function pd(event) {
     const retv = privateData.get(event);
-    console.assert(
-        retv != null,
-        "'this' is expected an Event object, but got",
-        event
-    );
+    if (retv == null) {
+        throw new TypeError(
+            "'this' is expected an Event object, but got another value."
+        )
+    }
     return retv
 }
 
@@ -861,9 +861,9 @@ if (
     Object.setPrototypeOf(EventTarget.prototype, window.EventTarget.prototype);
 }
 
-exports.defineEventAttribute = defineEventAttribute;
 exports.EventTarget = EventTarget;
 exports.default = EventTarget;
+exports.defineEventAttribute = defineEventAttribute;
 
 module.exports = EventTarget
 module.exports.EventTarget = module.exports["default"] = EventTarget

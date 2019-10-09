@@ -39,11 +39,11 @@ const wrappers = new WeakMap();
  */
 function pd(event) {
     const retv = privateData.get(event);
-    console.assert(
-        retv != null,
-        "'this' is expected an Event object, but got",
-        event
-    );
+    if (retv == null) {
+        throw new TypeError(
+            "'this' is expected an Event object, but got another value."
+        )
+    }
     return retv
 }
 
@@ -858,5 +858,5 @@ if (
 }
 
 export default EventTarget;
-export { defineEventAttribute, EventTarget };
+export { EventTarget, defineEventAttribute };
 //# sourceMappingURL=event-target-shim.mjs.map
