@@ -996,12 +996,16 @@ describe("EventTarget:", () => {
     })
 
     // Initialize a test target.
-    beforeEach(/* @this */ function() {
-        this.target = new TestTarget()
-    })
-    afterEach(/* @this */ function() {
-        this.target = null
-    })
+    beforeEach(
+        /* @this */ function() {
+            this.target = new TestTarget()
+        }
+    )
+    afterEach(
+        /* @this */ function() {
+            this.target = null
+        }
+    )
 
     doBasicTests()
 })
@@ -1014,12 +1018,16 @@ describe("EventTarget with attribute listeners:", () => {
     const TestTarget = EventTarget("test", "hello")
 
     // Initialize a test target.
-    beforeEach(/* @this */ function() {
-        this.target = new TestTarget()
-    })
-    afterEach(/* @this */ function() {
-        this.target = null
-    })
+    beforeEach(
+        /* @this */ function() {
+            this.target = new TestTarget()
+        }
+    )
+    afterEach(
+        /* @this */ function() {
+            this.target = null
+        }
+    )
 
     doBasicTests()
     doAttributeListenerTests()
@@ -1033,12 +1041,16 @@ describe("EventTarget with an array of attribute listeners:", () => {
     const TestTarget = EventTarget(["test", "hello"])
 
     // Initialize a test target.
-    beforeEach(/* @this */ function() {
-        this.target = new TestTarget()
-    })
-    afterEach(/* @this */ function() {
-        this.target = null
-    })
+    beforeEach(
+        /* @this */ function() {
+            this.target = new TestTarget()
+        }
+    )
+    afterEach(
+        /* @this */ function() {
+            this.target = null
+        }
+    )
 
     doBasicTests()
     doAttributeListenerTests()

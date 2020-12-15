@@ -1,5 +1,5 @@
-import babel from "rollup-plugin-babel"
-import minify from "rollup-plugin-babel-minify"
+import babel from "@rollup/plugin-babel"
+import { terser } from "rollup-plugin-terser"
 
 const banner = `/**
  * @author Toru Nagashima <https://github.com/mysticatea>
@@ -44,6 +44,7 @@ export default [
             sourcemap: true,
             format: "umd",
             name: "EventTargetShim",
+            banner,
             outro: umdOutro,
         },
         plugins: [
@@ -56,11 +57,7 @@ export default [
                     ],
                 ],
             }),
-            minify({
-                comments: false,
-                banner,
-                sourceMap: true,
-            }),
+            terser(),
         ],
     },
 ]

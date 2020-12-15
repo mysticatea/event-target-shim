@@ -1,9 +1,13 @@
 "use strict"
 
-const babel = require("rollup-plugin-babel")
-const commonjs = require("rollup-plugin-commonjs")
-const json = require("rollup-plugin-json")
-const resolve = require("rollup-plugin-node-resolve")
+function interop(x) {
+    return x.default || x
+}
+
+const babel = interop(require("@rollup/plugin-babel"))
+const commonjs = interop(require("@rollup/plugin-commonjs"))
+const json = interop(require("@rollup/plugin-json"))
+const resolve = interop(require("@rollup/plugin-node-resolve"))
 
 module.exports = function(config) {
     config.set({
@@ -11,7 +15,7 @@ module.exports = function(config) {
         frameworks: ["mocha"],
         files: ["test/index.mjs"],
         browsers: ["Chrome", "Firefox", "IE"],
-        reporters: ["progress", "growl"],
+        reporters: ["progress"],
         preprocessors: { "test/index.mjs": ["rollup"] },
         rollupPreprocessor: {
             plugins: [
@@ -29,7 +33,7 @@ module.exports = function(config) {
                             },
                         ],
                     ],
-                    externalHelpers: false,
+                    babelHelpers: "bundled",
                 }),
             ],
             output: {

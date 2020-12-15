@@ -1,12 +1,11 @@
 root: true
 
+ignorePatterns:
+- /dist
+
 extends:
   - plugin:@mysticatea/es2015
   - plugin:@mysticatea/+node
-
-globals:
-  console: false
-  window: false
 
 rules:
   new-cap: "off"
@@ -16,6 +15,8 @@ rules:
 
 overrides:
   - files: src/*
+    globals:
+      window: readonly
     rules:
       # To reduce size for babel-translation.
       no-restricted-syntax:
@@ -27,3 +28,10 @@ overrides:
       prefer-rest-params: "off"
       prefer-spread: "off"
       "@mysticatea/prefer-for-of": "off"
+
+  - files: scripts/rollup.config.js
+    extends: plugin:@mysticatea/+modules
+
+  - files: test/types.mjs
+    globals:
+      __dirname: "readonly"
