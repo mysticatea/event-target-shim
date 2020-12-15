@@ -2,7 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/event-target-shim.svg)](https://www.npmjs.com/package/event-target-shim)
 [![Downloads/month](https://img.shields.io/npm/dm/event-target-shim.svg)](http://www.npmtrends.com/event-target-shim)
-[![Build Status](https://travis-ci.org/mysticatea/event-target-shim.svg?branch=master)](https://travis-ci.org/mysticatea/event-target-shim)
+[![Build Status](https://github.com/mysticatea/event-target-shim/workflows/CI/badge.svg)](https://github.com/mysticatea/event-target-shim/actions)
 [![Coverage Status](https://codecov.io/gh/mysticatea/event-target-shim/branch/master/graph/badge.svg)](https://codecov.io/gh/mysticatea/event-target-shim)
 [![Dependency Status](https://david-dm.org/mysticatea/event-target-shim.svg)](https://david-dm.org/mysticatea/event-target-shim)
 

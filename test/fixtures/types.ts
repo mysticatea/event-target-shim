@@ -99,11 +99,11 @@ e.dispatchEvent({ type: "test" }) //@expected 2345
 
 e.addEventListener(
     "other", //@expected 2345
-    e => { const e2: Event = e } //@expected 7006
+    e => { const e2: Event = e }
 )
 e.removeEventListener(
     "other", //@expected 2345
-    e => { const e2: Event = e } //@expected 7006
+    e => { const e2: Event = e }
 )
 e.dispatchEvent({ type: "other" }) //@expected 2322
 b = e //@expected 2322
