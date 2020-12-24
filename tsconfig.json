@@ -1,14 +1,12 @@
 {
-    "compilerOptions": {
-        "lib": ["es2015", "dom"],
-        "noEmit": true,
-        "strict": true
-    },
-    "files": [
-        "index.d.ts",
-        "test/fixtures/types.ts"
-    ],
-    "exclude": [
-        "node_modules"
-    ]
+  "extends": "./tsconfig/base.json",
+  "compilerOptions": {
+    "checkJs": true,
+    "module": "CommonJS",
+    "noEmit": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "types": ["domexception", "mocha", "node"]
+  },
+  "include": ["scripts/**/*.ts", "src/**/*.ts", "test/**/*.ts"]
 }

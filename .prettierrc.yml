@@ -1,0 +1,8 @@
+overrides:
+  - files: ["*.js", "*.ts"]
+    options:
+      tabWidth: 4
+      semi: false
+      trailingComma: all
+      arrowParens: avoid
+      endOfLine: lf

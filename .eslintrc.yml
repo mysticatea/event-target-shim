@@ -1,37 +1,67 @@
 root: true
 
 ignorePatterns:
-- /dist
+  - "!.*"
+  - /coverage
+  - /dist
+  - /node_modules
+  - /test/fixtures/types.ts
 
 extends:
-  - plugin:@mysticatea/es2015
-  - plugin:@mysticatea/+node
+  - plugin:@mysticatea/es2020
+
+globals:
+  console: "off"
 
 rules:
-  new-cap: "off"
-  valid-jsdoc: "off"
-  import/newline-after-import: "off"
-  import/first: "off"
+  no-console: error
+  spaced-comment:
+    - error
+    - always
+    - block:
+        balanced: true
+        markers:
+          - eslint
+          - eslint-env
+          - eslint-disable
+          - eslint-enable
+          - exported
+          - globals
+          - istanbul
+      line:
+        exceptions: ["-", "=", "/"]
+        markers:
+          - eslint-disable-line
+          - eslint-disable-next-line
+          - istanbul
+          - "TODO:"
+          - "FIXME:"
+          - "/"
+  "@mysticatea/ts/explicit-member-accessibility": "off"
+  "@mysticatea/prettier": "off"
+
+settings:
+  node:
+    tryExtensions:
+      - .tsx
+      - .ts
+      - .mjs
+      - .cjs
+      - .js
+      - .json
+      - .node
 
 overrides:
-  - files: src/*
-    globals:
-      window: readonly
+  - files: scripts/**
     rules:
-      # To reduce size for babel-translation.
-      no-restricted-syntax:
-        - error
-        - ClassDeclaration
-        - ClassExpression
-        - ForOfStatement
-        - BinaryExpression[left.operator='typeof'][right.value='object']
-      prefer-rest-params: "off"
-      prefer-spread: "off"
+      no-console: "off"
+
+  - files: src/**
+    rules:
+      no-restricted-syntax: [error, ForOfStatement]
       "@mysticatea/prefer-for-of": "off"
 
-  - files: scripts/rollup.config.js
-    extends: plugin:@mysticatea/+modules
-
-  - files: test/types.mjs
-    globals:
-      __dirname: "readonly"
+  - files: test/fixtures/entrypoint.ts
+    rules:
+      "@mysticatea/ts/no-require-imports": "off"
+      "@mysticatea/ts/no-var-requires": "off"
