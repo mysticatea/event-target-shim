@@ -21,8 +21,8 @@
   "scripts": {
     "build": "run-s \"build:{clean,rollup,dts,meta}\"",
     "build:clean": "rimraf \"dist/*\"",
-    "build:rollup": "rollup --config .rollup.config.js",
-    "build:dts": "dts-bundle-generator --config dtsconfig.json",
+    "build:rollup": "rollup --config scripts/rollup.config.js",
+    "build:dts": "dts-bundle-generator --config scripts/dtsconfig.json",
     "build:meta": "cpx \"{LICENSE,package.json,README.md}\" dist/",
     "preversion": "npm test",
     "version": "npm run build",
