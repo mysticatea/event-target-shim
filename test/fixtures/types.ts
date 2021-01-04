@@ -1,152 +1,181 @@
+/// <reference lib="dom" />
 import {
-    EventTarget as EventTargetShim,
     Event as EventShim,
-    Type,
-    defineEventAttribute,
-} from "../../index"
+    EventTarget as EventTargetShim,
+    getEventAttributeValue,
+    setEventAttributeValue,
+} from "../../src/index"
 
-let a: EventTargetShim = new EventTargetShim()
-let b: EventTarget = new EventTargetShim()
-let c = new (EventTargetShim<{ test: Event }, { ontest: Event }>("test"))()
-let d = new (EventTargetShim("test"))()
+let signal = new AbortController().signal
 
-a.addEventListener("test", (event: EventShim) => { })
-a.addEventListener("test", (event: Event) => { })
-
-a.addEventListener("test", (event: EventShim) => { }, true)
-a.addEventListener("test", (event: EventShim) => { }, { capture: true })
-a.addEventListener("test", (event: EventShim) => { }, { capture: true, once: true, passive: true })
-
-a.dispatchEvent(new CustomEvent("test"))
-a.dispatchEvent({ type: "test" })
-
-a.removeEventListener("test", (event: EventShim) => { })
-a.removeEventListener("test", (event: Event) => { })
-
-a.removeEventListener("test", (event: EventShim) => { }, true)
-a.removeEventListener("test", (event: EventShim) => { }, { capture: true })
-
-b.addEventListener("test", (event: EventShim) => { })
-b.addEventListener("test", (event: Event) => { })
-
-b.addEventListener("test", (event: EventShim) => { }, true)
-b.addEventListener("test", (event: EventShim) => { }, { capture: true })
-b.addEventListener("test", (event: EventShim) => { }, { capture: true, once: true, passive: true })
-
-b.dispatchEvent(new CustomEvent("test"))
-
-b.removeEventListener("test", (event: EventShim) => { })
-b.removeEventListener("test", (event: Event) => { })
-
-b.removeEventListener("test", (event: EventShim) => { }, true)
-b.removeEventListener("test", (event: EventShim) => { }, { capture: true })
-
-c.addEventListener("test", (event: EventShim) => { })
-c.addEventListener("test", (event: Event) => { })
-
-c.addEventListener("test", (event: EventShim) => { }, true)
-c.addEventListener("test", (event: EventShim) => { }, { capture: true })
-c.addEventListener("test", (event: EventShim) => { }, { capture: true, once: true, passive: true })
-
-c.dispatchEvent(new CustomEvent("test"))
-c.dispatchEvent({ type: "test" })
-
-c.removeEventListener("test", (event: EventShim) => { })
-c.removeEventListener("test", (event: Event) => { })
-
-c.removeEventListener("test", (event: EventShim) => { }, true)
-c.removeEventListener("test", (event: EventShim) => { }, { capture: true })
-
-c.ontest = (event: EventShim) => { }
-c.ontest = (event: Event) => { }
-c.ontest = null
-
-d.addEventListener("test", (event: EventShim) => { })
-d.addEventListener("test", (event: Event) => { })
-
-d.addEventListener("test", (event: EventShim) => { }, true)
-d.addEventListener("test", (event: EventShim) => { }, { capture: true })
-d.addEventListener("test", (event: EventShim) => { }, { capture: true, once: true, passive: true })
-
-d.dispatchEvent(new CustomEvent("test"))
-d.dispatchEvent({ type: "test" })
-
-d.removeEventListener("test", (event: EventShim) => { })
-d.removeEventListener("test", (event: Event) => { })
-
-d.removeEventListener("test", (event: EventShim) => { }, true)
-d.removeEventListener("test", (event: EventShim) => { }, { capture: true })
-
-interface TestEvent extends Event {
-    type: "test"
-    data: string
+class MyEvent extends EventShim<"myevent"> {
+    readonly value: number
+    constructor(value: number) {
+        super("myevent")
+        this.value = value
+    }
+}
+type EventMap1 = {
+    test: EventShim<"test">
+    myevent: MyEvent
 }
 
-// In "strict" mode, cannot use undefined event types.
-// On the other hand, it cannot be assigned to the standard `EventTarget` type.
-// This means the following cases are error.
-const StrictCustomEventTarget = EventTargetShim<
-    { test: TestEvent },
-    { ontest: TestEvent },
-    "strict"
->("test")
-const e = new StrictCustomEventTarget()
+const a = new EventTargetShim()
+const b = new EventTargetShim<EventMap1>()
 
-e.addEventListener("test", e => { const e2: TestEvent = e })
-e.removeEventListener("test", e => { const e2: TestEvent = e })
-e.dispatchEvent({ type: "test", data: "" })
-e.dispatchEvent({ type: "test" }) //@expected 2345
+//------------------------------------------------------------------------------
+// Assignments
+//------------------------------------------------------------------------------
 
-e.addEventListener(
-    "other", //@expected 2345
-    e => { const e2: Event = e }
-)
-e.removeEventListener(
-    "other", //@expected 2345
-    e => { const e2: Event = e }
-)
-e.dispatchEvent({ type: "other" }) //@expected 2322
-b = e //@expected 2322
+let EventDomToShim: EventShim = new Event("test")
+let EventShimToDom: Event = new EventShim("test")
+let EventTargetDomToShim: EventTargetShim = new EventTarget()
+let EventTargetShimToDom: EventTarget = new EventTargetShim()
+let EventTargetDomToShim1: EventTargetShim<EventMap1> = new EventTarget()
+let EventTargetShimToDom1: EventTarget = new EventTargetShim<EventMap1>()
+let AbortSignalDomToShim: EventTargetShim.AbortSignal = new AbortController()
+    .signal
+let AbortSignalShimToDom: AbortSignal = {} as EventTargetShim.AbortSignal
 
-// In "loose" mode, can use undefined event types and can be assigned to the
-// standard `EventTarget` type.
-const LooseCustomEventTarget = EventTargetShim<
-    { test: TestEvent },
-    { ontest: TestEvent }
->("test")
-const f = new LooseCustomEventTarget()
+//------------------------------------------------------------------------------
+// EventTarget#addEventListener
+//------------------------------------------------------------------------------
 
-f.addEventListener("test", e => { const e2: TestEvent = e })
-f.removeEventListener("test", e => { const e2: TestEvent = e })
-f.dispatchEvent({ type: "test", data: "" })
-f.dispatchEvent({ type: "test" }) //⚠️ cannot infer type
+a.addEventListener("test")
+a.addEventListener("test", (_event: EventShim) => {})
+a.addEventListener("test", (_event: Event) => {})
+a.addEventListener("test", event => {
+    const domEvent: Event = event
+    const shimEvent: EventShim = event
+})
+b.addEventListener("test", event => {
+    // `event` is an `Event`
+    const ev: Event = event
+    // @ts-expect-error -- `Event` cannot be assigned to `MyEvent`.
+    const myEvent: MyEvent = event
+    // @ts-expect-error -- `Event` cannot be assigned to `string`.
+    const str: string = event
+})
+b.addEventListener("myevent", event => {
+    // `event` is an `MyEvent`
+    const ev1: Event = event
+    const ev2: MyEvent = event
+    // @ts-expect-error -- `MyEvent` cannot be assigned to `string`.
+    const str: string = event
+})
+b.addEventListener("non-exist", event => {
+    // `event` is an `Event`
+    const ev: Event = event
+    // @ts-expect-error -- `Event` cannot be assigned to `MyEvent`.
+    const myEvent: MyEvent = event
+    // @ts-expect-error -- `Event` cannot be assigned to `string`.
+    const str: string = event
+})
 
-f.addEventListener("other", e => { const e2: Event = e })
-f.removeEventListener("other", e => { const e2: Event = e })
-f.dispatchEvent({ type: "other" })
-b = f
+// Options
+a.addEventListener("test", null, true)
+a.addEventListener("test", null, { capture: true })
+a.addEventListener("test", null, { once: true })
+a.addEventListener("test", null, { passive: true })
+a.addEventListener("test", null, { signal: signal })
+a.addEventListener("test", null, {
+    capture: true,
+    once: true,
+    passive: true,
+    signal: signal,
+})
 
-defineEventAttribute(StrictCustomEventTarget.prototype, "test")
-defineEventAttribute(LooseCustomEventTarget.prototype, "test")
+// @ts-expect-error -- require `type` argument at least.
+a.addEventListener()
+// @ts-expect-error -- `foo` doesn't exist.
+a.addEventListener("test", null, { foo: true })
 
-class AbortSignal extends EventTargetShim<
-    { abort: Event & Type<"abort"> },
-    { onabort: Event & Type<"abort"> },
-    "loose"
-> {
+//------------------------------------------------------------------------------
+// EventTarget#removeEventListener
+//------------------------------------------------------------------------------
+
+a.removeEventListener("test")
+a.removeEventListener("test", (_event: EventShim) => {})
+a.removeEventListener("test", (_event: Event) => {})
+
+// Options
+a.removeEventListener("test", null, true)
+a.removeEventListener("test", null, { capture: true })
+
+// @ts-expect-error -- require `type` argument at least.
+a.removeEventListener()
+// @ts-expect-error -- `once` doesn't exist.
+a.removeEventListener("test", null, { once: true })
+// @ts-expect-error -- `passive` doesn't exist.
+a.removeEventListener("test", null, { passive: true })
+// @ts-expect-error -- `signal` doesn't exist.
+a.removeEventListener("test", null, { signal: signal })
+
+//------------------------------------------------------------------------------
+// EventTarget#dispatchEvent
+//------------------------------------------------------------------------------
+
+a.dispatchEvent(new Event("test"))
+a.dispatchEvent(new EventShim("test"))
+
+// @ts-expect-error -- require `event` argument.
+a.dispatchEvent()
+
+//------------------------------------------------------------------------------
+// Strict Mode
+//------------------------------------------------------------------------------
+
+let my = new EventTargetShim<EventMap1, "strict">()
+my.addEventListener("test", event => {
+    const test: EventShim<"test"> = event
+    // @ts-expect-error -- `Event` cannot be assigned to `MyEvent`.
+    const myevent: MyEvent = event
+})
+my.addEventListener("myevent", event => {
+    // @ts-expect-error -- `MyEvent` cannot be assigned to `Event<"test">`.
+    const test: EventShim<"test"> = event
+    const ev: Event = event
+    const myevent: MyEvent = event
+})
+// @ts-expect-error -- non-exist cannot be assgined to `"test" | "myevent"`.
+my.addEventListener("non-exist", _event => {})
+my.dispatchEvent(new EventShim("test"))
+my.dispatchEvent(new MyEvent(1))
+my.dispatchEvent({ type: "test" })
+my.dispatchEvent({ type: "myevent", value: 1 })
+// @ts-expect-error -- require `value` property
+my.dispatchEvent({ type: "myevent" })
+// @ts-expect-error -- `type` must be "test" or "myevent"
+my.dispatchEvent({ type: "nonexist" })
+// @ts-expect-error -- `type` must be "test" or "myevent"
+my.dispatchEvent(new Event("test"))
+
+//------------------------------------------------------------------------------
+// getEventAttributeValue / setEventAttributeValue
+//------------------------------------------------------------------------------
+
+class MyEventTarget1 extends EventTargetShim<EventMap1> {
+    get ontest() {
+        return getEventAttributeValue<EventMap1["test"]>(this, "test")
+    }
+    set ontest(value) {
+        setEventAttributeValue(this, "test", value)
+    }
+    get onmyevent() {
+        return getEventAttributeValue<EventMap1["myevent"]>(this, "myevent")
+    }
+    set onmyevent(value) {
+        setEventAttributeValue(this, "myevent", value)
+    }
 }
-defineEventAttribute(AbortSignal.prototype, "abort")
-
-class EventSource extends EventTargetShim<
-    { error: Event & Type<"error">, message: MessageEvent & Type<"message">, open: Event & Type<"open"> },
-    { onerror: Event & Type<"error">, onmessage: MessageEvent & Type<"message">, onopen: Event & Type<"open"> },
-    "strict"
-> {
+let eav = new MyEventTarget1()
+eav.ontest = e => {
+    const shim: EventShim<"test"> = e
+    // @ts-expect-error -- `e` is EventShim<"test">
+    const myevent: MyEvent = e
 }
-defineEventAttribute(EventSource.prototype, "close")
-defineEventAttribute(EventSource.prototype, "error")
-defineEventAttribute(EventSource.prototype, "message")
-
-let es = new EventSource()
-es.addEventListener("message", e => { e.data })
-es.dispatchEvent({ type: "message" }) //@expected 2345
+eav.onmyevent = e => {
+    const shim: MyEvent = e
+    // @ts-expect-error -- `e` is MyEvent
+    const myevent: EventShim<"test"> = e
+}

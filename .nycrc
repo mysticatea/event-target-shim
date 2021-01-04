@@ -1,8 +1,0 @@
-{
-    "include": [
-        "src/*"
-    ],
-    "extension": [
-        ".mjs"
-    ]
-}

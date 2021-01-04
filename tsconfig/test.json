@@ -1,0 +1,9 @@
+{
+  "extends": "./base.json",
+  "compilerOptions": {
+    "lib": ["ES2020", "DOM"],
+    "types": ["domexception", "mocha"]
+  },
+  "include": ["../src/**/*.ts", "../test/**/*.ts"],
+  "exclude": ["../test/fixtures/types.ts"]
+}
