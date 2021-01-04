@@ -8,12 +8,17 @@
       "import": "./index.mjs",
       "require": "./index.js"
     },
-    "./es5": "./es5.js",
+    "./es5": {
+      "import": "./es5.mjs",
+      "require": "./es5.js"
+    },
+    "./umd": "./umd.js",
     "./package.json": "./package.json"
   },
   "files": [
     "index.*",
-    "es5.*"
+    "es5.*",
+    "umd.*"
   ],
   "engines": {
     "node": ">=10.13.0"
@@ -22,7 +27,7 @@
     "build": "run-s \"build:{clean,rollup,dts,meta}\"",
     "build:clean": "rimraf \"dist/*\"",
     "build:rollup": "rollup --config scripts/rollup.config.js",
-    "build:dts": "dts-bundle-generator --config scripts/dtsconfig.json",
+    "build:dts": "dts-bundle-generator --project tsconfig/dts.json --out-file dist/index.d.ts src/index.ts && dts-bundle-generator --project tsconfig/dts.json --out-file dist/es5.d.ts src/index.ts",
     "build:meta": "cpx \"{LICENSE,package.json,README.md}\" dist/",
     "preversion": "npm test",
     "version": "npm run build",
@@ -47,6 +52,9 @@
     "@mysticatea/spy": "^0.1.2",
     "@mysticatea/tools": "^0.1.1",
     "@rollup/plugin-babel": "^5.2.2",
+    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^11.0.1",
     "@rollup/plugin-typescript": "^8.1.0",
     "@types/domexception": "^2.0.1",
     "@types/istanbul-lib-coverage": "^2.0.3",
@@ -75,6 +83,7 @@
     "process": "^0.11.10",
     "rimraf": "^3.0.2",
     "rollup": "^2.35.1",
+    "rollup-plugin-terser": "^7.0.2",
     "rollup-watch": "^4.3.1",
     "stream-browserify": "^3.0.0",
     "ts-loader": "^8.0.12",
@@ -104,5 +113,6 @@
   },
   "homepage": "https://github.com/mysticatea/event-target-shim",
   "funding": "https://github.com/sponsors/mysticatea",
-  "sideEffects": false
+  "sideEffects": false,
+  "unpkg": "umd.js"
 }
