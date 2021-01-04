@@ -4,9 +4,11 @@
 
 ```js
 import { EventTarget } from "event-target-shim";
+// or
+const { EventTarget } = require("event-target-shim");
 ```
 
-> https://dom.spec.whatwg.org/#interface-eventtarget
+> The HTML Standard: [EventTarget interface](https://dom.spec.whatwg.org/#interface-eventtarget)
 
 ### ▶ constructor
 
@@ -45,9 +47,11 @@ Dispatch an event.
 
 ```js
 import { Event } from "event-target-shim";
+// or
+const { Event } = require("event-target-shim");
 ```
 
-> https://dom.spec.whatwg.org/#interface-event
+> The HTML Standard: [Event interface](https://dom.spec.whatwg.org/#interface-event)
 
 See [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Event#Properties) for details.
 
@@ -58,6 +62,11 @@ import {
   getEventAttributeValue,
   setEventAttributeValue,
 } from "event-target-shim";
+// or
+const {
+  getEventAttributeValue,
+  setEventAttributeValue,
+} = require("event-target-shim");
 ```
 
 > Non-standard.
