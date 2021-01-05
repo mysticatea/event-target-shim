@@ -15,10 +15,16 @@ type AbortSignalEventMap = {
 export class AbortSignalStub extends EventTarget<AbortSignalEventMap> {
     public aborted = false
 
-    public get onabort(): EventTarget.FunctionEventListener | null {
-        return getEventAttributeValue(this, "abort")
+    public get onabort(): EventTarget.CallbackFunction<
+        EventTarget.AbortSignal,
+        Event
+    > | null {
+        return getEventAttributeValue<EventTarget.AbortSignal, Event>(
+            this,
+            "abort",
+        )
     }
-    public set onabort(value: EventTarget.FunctionEventListener | null) {
+    public set onabort(value) {
         setEventAttributeValue(this, "abort", value)
     }
 

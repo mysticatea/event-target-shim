@@ -1,9 +1,9 @@
 import { Event } from "./event"
 import {
-    EventTarget,
     getEventAttributeValue,
     setEventAttributeValue,
-} from "./event-target"
+} from "./event-attribute-handler"
+import { EventTarget } from "./event-target"
 
 /**
  * Define an `EventTarget` class that has event attibutes.
@@ -11,10 +11,11 @@ import {
  * @deprecated Use `getEventAttributeValue`/`setEventAttributeValue` pair on your derived class instead because of static analysis friendly.
  */
 export function defineCustomEventTarget<
-    TEventMap extends Record<string, Event>
+    TEventMap extends Record<string, Event>,
+    TMode extends "standard" | "strict" = "standard"
 >(
     ...types: (string & keyof TEventMap)[]
-): defineCustomEventTarget.CustomEventTargetConstructor<TEventMap> {
+): defineCustomEventTarget.CustomEventTargetConstructor<TEventMap, TMode> {
     class CustomEventTarget extends EventTarget {}
     for (let i = 0; i < types.length; ++i) {
         defineEventAttribute(CustomEventTarget.prototype, types[i])
@@ -24,23 +25,31 @@ export function defineCustomEventTarget<
 }
 
 export namespace defineCustomEventTarget {
+    /**
+     * The interface of CustomEventTarget constructor.
+     */
     export type CustomEventTargetConstructor<
-        TEventMap extends Record<string, Event>
+        TEventMap extends Record<string, Event>,
+        TMode extends "standard" | "strict"
     > = {
-        new (): CustomEventTarget<TEventMap>
-        prototype: CustomEventTarget<TEventMap>
+        /**
+         * Create a new instance.
+         */
+        new (): CustomEventTarget<TEventMap, TMode>
+        /**
+         * prototype object.
+         */
+        prototype: CustomEventTarget<TEventMap, TMode>
     }
 
+    /**
+     * The interface of CustomEventTarget.
+     */
     export type CustomEventTarget<
-        TEventMap extends Record<string, Event>
-    > = EventTarget<TEventMap> & EventAttributes<TEventMap>
-
-    export type EventAttributes<TEventMap extends Record<string, Event>> = {
-        [P in string &
-            keyof TEventMap as `on${P}`]: EventTarget.FunctionEventListener<
-            TEventMap[P]
-        > | null
-    }
+        TEventMap extends Record<string, Event>,
+        TMode extends "standard" | "strict"
+    > = EventTarget<TEventMap, TMode> &
+        defineEventAttribute.EventAttributes<any, TEventMap>
 }
 
 /**
@@ -59,7 +68,8 @@ export function defineEventAttribute<
     type: TEventType,
     _eventClass?: TEventConstrucor,
 ): asserts target is TEventTarget &
-    defineCustomEventTarget.EventAttributes<
+    defineEventAttribute.EventAttributes<
+        TEventTarget,
         Record<TEventType, InstanceType<TEventConstrucor>>
     > {
     Object.defineProperty(target, `on${type}`, {
@@ -72,4 +82,20 @@ export function defineEventAttribute<
         configurable: true,
         enumerable: true,
     })
+}
+
+export namespace defineEventAttribute {
+    /**
+     * Definition of event attributes.
+     */
+    export type EventAttributes<
+        TEventTarget extends EventTarget<any, any>,
+        TEventMap extends Record<string, Event>
+    > = {
+        [P in string &
+            keyof TEventMap as `on${P}`]: EventTarget.CallbackFunction<
+            TEventTarget,
+            TEventMap[P]
+        > | null
+    }
 }

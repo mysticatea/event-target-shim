@@ -156,13 +156,16 @@ my.dispatchEvent(new Event("test"))
 
 class MyEventTarget1 extends EventTargetShim<EventMap1> {
     get ontest() {
-        return getEventAttributeValue<EventMap1["test"]>(this, "test")
+        return getEventAttributeValue<this, EventMap1["test"]>(this, "test")
     }
     set ontest(value) {
         setEventAttributeValue(this, "test", value)
     }
     get onmyevent() {
-        return getEventAttributeValue<EventMap1["myevent"]>(this, "myevent")
+        return getEventAttributeValue<this, EventMap1["myevent"]>(
+            this,
+            "myevent",
+        )
     }
     set onmyevent(value) {
         setEventAttributeValue(this, "myevent", value)

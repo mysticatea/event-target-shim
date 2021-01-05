@@ -12,7 +12,6 @@ import rimraf from "rimraf"
 import url from "url"
 import util from "util"
 import webpackCallback, { Configuration, ProvidePlugin, Stats } from "webpack"
-import { Global } from "../src/lib/global"
 
 const writeFile = util.promisify(fs.writeFile)
 const mkdir = util.promisify(fs.mkdir)
@@ -99,7 +98,7 @@ async function runTestsOnNode(
     console.log(chalk.magentaBright("-------- node ".padEnd(80, "-")))
 
     await import(path.join(workspacePath, "node.js"))
-    const { coverage, failures } = await Global.result
+    const { coverage, failures } = await (global as any).result
 
     await mergeCoverageMap(coverageMap, coverage)
 
@@ -184,7 +183,7 @@ async function build(
             ],
         },
         output: {
-            devtoolModuleFilenameTemplate: "../[resource-path]",
+            devtoolModuleFilenameTemplate: path.resolve("[resource-path]"),
             path: workspacePath,
             filename: "node.js",
         },

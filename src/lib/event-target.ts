@@ -1,8 +1,26 @@
 import DOMException from "domexception"
-import { Event, getEventData } from "./event"
+import { Event, getEventInternalData } from "./event"
 import { EventWrapper } from "./event-wrapper"
 import { Global } from "./global"
-import { assert, assertType, error, warn } from "./misc"
+import {
+    invokeCallback,
+    isOnce,
+    isPassive,
+    isRemoved,
+    Listener,
+} from "./listener"
+import {
+    addListener,
+    findIndexOfListener,
+    removeListener,
+    removeListenerAt,
+} from "./listener-list"
+import {
+    createListenerListMap,
+    ensureListenerList,
+    ListenerListMap,
+} from "./listener-list-map"
+import { assert, assertType, warn } from "./misc"
 
 /**
  * An implementation of the `EventTarget` interface.
@@ -16,7 +34,7 @@ export class EventTarget<
      * Initialize this instance.
      */
     constructor() {
-        internalDataMap.set(this, Object.create(null))
+        internalDataMap.set(this, createListenerListMap())
     }
 
     /**
@@ -27,7 +45,19 @@ export class EventTarget<
      */
     addEventListener<T extends string & keyof TEventMap>(
         type: T,
-        callback?: EventTarget.EventListener<TEventMap[T]> | null,
+        callback?: EventTarget.EventListener<this, TEventMap[T]> | null,
+        options?: EventTarget.AddOptions,
+    ): void
+
+    /**
+     * Add an event listener.
+     * @param type The event type.
+     * @param callback The event listener.
+     * @param options Options.
+     */
+    addEventListener(
+        type: string,
+        callback?: EventTarget.FallbackEventListener<this, TMode>,
         options?: EventTarget.AddOptions,
     ): void
 
@@ -40,20 +70,11 @@ export class EventTarget<
      */
     addEventListener<T extends string & keyof TEventMap>(
         type: T,
-        callback: EventTarget.EventListener<TEventMap[T]> | null | undefined,
+        callback:
+            | EventTarget.EventListener<this, TEventMap[T]>
+            | null
+            | undefined,
         capture: boolean,
-    ): void
-
-    /**
-     * Add an event listener.
-     * @param type The event type.
-     * @param callback The event listener.
-     * @param options Options.
-     */
-    addEventListener(
-        type: string,
-        callback?: EventTarget.FallbackEventListener<TMode>,
-        options?: EventTarget.AddOptions,
     ): void
 
     /**
@@ -65,14 +86,14 @@ export class EventTarget<
      */
     addEventListener(
         type: string,
-        callback: EventTarget.FallbackEventListener<TMode>,
+        callback: EventTarget.FallbackEventListener<this, TMode>,
         capture: boolean,
     ): void
 
     // Implementation
     addEventListener<T extends string & keyof TEventMap>(
         type0: T,
-        callback0?: EventTarget.EventListener<TEventMap[T]> | null,
+        callback0?: EventTarget.EventListener<this, TEventMap[T]> | null,
         options0?: boolean | EventTarget.AddOptions,
     ): void {
         const listenerMap = $(this)
@@ -87,38 +108,17 @@ export class EventTarget<
         if (callback == null || signal?.aborted) {
             return
         }
+        const list = ensureListenerList(listenerMap, type)
 
         // Find existing listener.
-        const list = ensureListenerList(listenerMap, type)
-        const i = findIndexOfListener(list.listeners, callback, capture)
+        const i = findIndexOfListener(list, callback, capture)
         if (i !== -1) {
             warnDuplicate(list.listeners[i], callback, passive, once, signal)
             return
         }
 
-        // Init for the signal.
-        let signalListener: (() => void) | undefined
-        if (signal) {
-            signalListener = findAndRemoveListener.bind(
-                null,
-                listenerMap,
-                type,
-                callback,
-                capture,
-            )
-            signal.addEventListener("abort", signalListener)
-        }
-
         // Add the new listener.
-        addListener(list, {
-            callback,
-            flags:
-                (capture ? ListenerFlags.Capture : 0) |
-                (passive ? ListenerFlags.Passive : 0) |
-                (once ? ListenerFlags.Once : 0),
-            signal,
-            signalListener,
-        })
+        addListener(list, callback, capture, passive, once, signal)
     }
 
     /**
@@ -129,7 +129,19 @@ export class EventTarget<
      */
     removeEventListener<T extends string & keyof TEventMap>(
         type: T,
-        callback?: EventTarget.EventListener<TEventMap[T]> | null,
+        callback?: EventTarget.EventListener<this, TEventMap[T]> | null,
+        options?: EventTarget.Options,
+    ): void
+
+    /**
+     * Remove an added event listener.
+     * @param type The event type.
+     * @param callback The event listener.
+     * @param options Options.
+     */
+    removeEventListener(
+        type: string,
+        callback?: EventTarget.FallbackEventListener<this, TMode>,
         options?: EventTarget.Options,
     ): void
 
@@ -142,20 +154,11 @@ export class EventTarget<
      */
     removeEventListener<T extends string & keyof TEventMap>(
         type: T,
-        callback: EventTarget.EventListener<TEventMap[T]> | null | undefined,
+        callback:
+            | EventTarget.EventListener<this, TEventMap[T]>
+            | null
+            | undefined,
         capture: boolean,
-    ): void
-
-    /**
-     * Remove an added event listener.
-     * @param type The event type.
-     * @param callback The event listener.
-     * @param options Options.
-     */
-    removeEventListener(
-        type: string,
-        callback?: EventTarget.FallbackEventListener<TMode>,
-        options?: EventTarget.Options,
     ): void
 
     /**
@@ -167,14 +170,14 @@ export class EventTarget<
      */
     removeEventListener(
         type: string,
-        callback: EventTarget.FallbackEventListener<TMode>,
+        callback: EventTarget.FallbackEventListener<this, TMode>,
         capture: boolean,
     ): void
 
     // Implementation
     removeEventListener<T extends string & keyof TEventMap>(
         type0: T,
-        callback0?: EventTarget.EventListener<TEventMap[T]> | null,
+        callback0?: EventTarget.EventListener<this, TEventMap[T]> | null,
         options0?: boolean | EventTarget.Options,
     ): void {
         const listenerMap = $(this)
@@ -183,11 +186,11 @@ export class EventTarget<
             callback0,
             options0,
         )
-        if (callback == null) {
-            return
-        }
+        const list = listenerMap[type]
 
-        findAndRemoveListener(listenerMap, type, callback, capture)
+        if (callback != null && list) {
+            removeListener(list, callback, capture)
+        }
     }
 
     /**
@@ -195,7 +198,7 @@ export class EventTarget<
      * @param event The `Event` object to dispatch.
      */
     dispatchEvent<T extends string & keyof TEventMap>(
-        event: EventTarget.EventData<TEventMap, T>,
+        event: EventTarget.EventData<TEventMap, TMode, T>,
     ): boolean
 
     /**
@@ -213,7 +216,7 @@ export class EventTarget<
 
         const event =
             event0 instanceof Event ? event0 : EventWrapper.wrap(event0)
-        const eventData = getEventData(event)
+        const eventData = getEventInternalData(event)
         if (eventData.dispatchFlag) {
             throw new DOMException(
                 "This event has been in dispatching.",
@@ -241,18 +244,15 @@ export class EventTarget<
                 }
 
                 // Remove this listener if has the `once` flag.
-                if (isOnce(listener) && removeListener(list, i, !cow)) {
+                if (isOnce(listener) && removeListenerAt(list, i, !cow)) {
+                    // Because this listener was removed, the next index is the
+                    // same as the current value.
                     i -= 1
                 }
 
                 // Call this listener with the `passive` flag.
                 eventData.inPassiveListenerFlag = isPassive(listener)
-                invoke(
-                    listener.callback,
-                    (this as unknown) as EventTarget,
-                    event,
-                    isEventAttribute(listener),
-                )
+                invokeCallback(listener, this, event)
                 eventData.inPassiveListenerFlag = false
 
                 // Stop if the `event.stopImmediatePropagation()` method was called.
@@ -281,24 +281,27 @@ export namespace EventTarget {
     /**
      * The event listener.
      */
-    export type EventListener<T extends Event = Event> =
-        | FunctionEventListener<T>
-        | ObjectEventListener<T>
+    export type EventListener<
+        TEventTarget extends EventTarget<any, any>,
+        TEvent extends Event
+    > = CallbackFunction<TEventTarget, TEvent> | CallbackObject<TEvent>
 
     /**
      * The event listener function.
      */
-    export interface FunctionEventListener<T extends Event = Event> {
-        (event: T): void
+    export interface CallbackFunction<
+        TEventTarget extends EventTarget<any, any>,
+        TEvent extends Event
+    > {
+        (this: TEventTarget, event: TEvent): void
     }
 
     /**
      * The event listener object.
      * @see https://dom.spec.whatwg.org/#callbackdef-eventlistener
-     * @deprecated Use first-class functions instead.
      */
-    export interface ObjectEventListener<T extends Event = Event> {
-        handleEvent(event: T): void
+    export interface CallbackObject<TEvent extends Event> {
+        handleEvent(event: TEvent): void
     }
 
     /**
@@ -325,102 +328,59 @@ export namespace EventTarget {
      */
     export interface AbortSignal extends EventTarget<{ abort: Event }> {
         readonly aborted: boolean
-        onabort: FunctionEventListener | null
+        onabort: CallbackFunction<this, Event> | null
     }
 
+    /**
+     * The event data to dispatch in strict mode.
+     */
     export type EventData<
         TEventMap extends Record<string, Event>,
+        TMode extends "standard" | "strict",
         TEventType extends string
-    > = IsString<keyof TEventMap> extends true
-        ? never
-        : ExplicitType<TEventType> &
-              Partial<Omit<Event, "type">> &
-              Omit<TEventMap[TEventType], keyof Event>
+    > = TMode extends "strict"
+        ? IsValidEventMap<TEventMap> extends true
+            ? ExplicitType<TEventType> &
+                  Omit<TEventMap[TEventType], keyof Event> &
+                  Partial<Omit<Event, "type">>
+            : never
+        : never
 
-    export type IsString<T> = T extends string
-        ? string extends T
-            ? true
-            : false
-        : false
-
+    /**
+     * Define explicit `type` property if `T` is a string literal.
+     * Otherwise, never.
+     */
     export type ExplicitType<T extends string> = string extends T
         ? never
         : { readonly type: T }
 
+    /**
+     * The event listener type in standard mode.
+     * Otherwise, never.
+     */
     export type FallbackEventListener<
+        TEventTarget extends EventTarget<any, any>,
         TMode extends "standard" | "strict"
-    > = TMode extends "standard" ? EventListener | null | undefined : never
+    > = TMode extends "standard"
+        ? EventListener<TEventTarget, Event> | null | undefined
+        : never
 
+    /**
+     * The event type in standard mode.
+     * Otherwise, never.
+     */
     export type FallbackEvent<
         TMode extends "standard" | "strict"
     > = TMode extends "standard" ? Event : never
+
+    /**
+     * Check if given event map is valid.
+     * It's valid if the keys of the event map are narrower than `string`.
+     */
+    export type IsValidEventMap<T> = string extends keyof T ? false : true
 }
 
-/**
- * Get the current value of a given event attribute.
- * @param target The `EventTarget` object to get.
- * @param type The event type.
- */
-export function getEventAttributeValue<TEvent extends Event>(
-    target: EventTarget,
-    type: string,
-): EventTarget.FunctionEventListener<TEvent> | null {
-    const retv = $(target)[type]?.attr?.callback ?? null
-    return retv as EventTarget.FunctionEventListener<TEvent> | null
-}
-
-/**
- * Set an event listener to a given event attribute.
- * @param target The `EventTarget` object to set.
- * @param type The event type.
- * @param callback The event listener.
- */
-export function setEventAttributeValue<TEvent extends Event>(
-    target: EventTarget,
-    type: string,
-    callback: EventTarget.FunctionEventListener<TEvent> | null,
-): void {
-    const list = ensureListenerList($(target), String(type))
-    if (
-        typeof callback === "function" ||
-        (typeof callback === "object" && callback !== null)
-    ) {
-        // Set it
-        if (list.attr) {
-            list.attr.callback = callback as EventTarget.EventListener
-        } else {
-            addListener(
-                list,
-                (list.attr = {
-                    callback: callback as EventTarget.EventListener,
-                    flags: ListenerFlags.EventAttribute,
-                    signal: undefined,
-                    signalListener: undefined,
-                }),
-            )
-        }
-    } else if (list.attr) {
-        // Remove it
-        removeListener(list, list.listeners.indexOf(list.attr))
-    }
-}
-
-/**
- * Get registered event listeners from an `EventTarget` object.
- * @param target The `EventTarget` object to get.
- * @param type The type of events to get.
- */
-export function countEventListeners<
-    TEventMap extends Record<string, Event> = Record<string, Event>,
-    TMode extends "standard" | "strict" = "standard"
->(target: EventTarget<TEventMap, TMode>, type?: string): number {
-    const listenerMap = $(target)
-    const keys = type ? [type] : Object.keys(listenerMap)
-    return keys.reduce(
-        (count, key) => count + listenerMap[key]!.listeners.length,
-        0,
-    )
-}
+export { $ as getEventTargetInternalData }
 
 //------------------------------------------------------------------------------
 // Helpers
@@ -429,63 +389,7 @@ export function countEventListeners<
 /**
  * Internal data for EventTarget
  */
-type EventTargetInternalData = Record<string, ListenerList | undefined>
-
-/**
- * Information of an listener list.
- */
-interface ListenerList {
-    /**
-     * The listener of the event attribute handler.
-     */
-    attr: Listener | undefined
-    /**
-     * `true` if the `dispatchEvent` method is traversing the current `listeners` array.
-     */
-    cow: boolean
-    /**
-     * The listeners.
-     * This is writable for copy-on-write.
-     */
-    listeners: Listener[]
-}
-
-/**
- * The event listener concept.
- * @see https://dom.spec.whatwg.org/#concept-event-listener
- */
-interface Listener {
-    /**
-     * The callback function.
-     * This is writable for event attribute handlers.
-     */
-    callback: EventTarget.EventListener
-    /**
-     * The flags of this listener.
-     * This is writable to add the removed flag.
-     */
-    flags: ListenerFlags
-    /**
-     * The `AbortSignal` to remove this listener.
-     */
-    readonly signal: EventTarget.AbortSignal | undefined
-    /**
-     * The `abort` event listener for the `signal`.
-     * To remove it from the `signal`.
-     */
-    readonly signalListener: (() => void) | undefined
-}
-
-/**
- * The flags of listeners.
- */
-const enum ListenerFlags {
-    EventAttribute = 0x01,
-    Capture = 0x02,
-    Passive = 0x04,
-    Once = 0x08,
-    Removed = 0x10,
-}
+type EventTargetInternalData = ListenerListMap
 
 /**
  * Internal data.
@@ -511,13 +415,13 @@ function $(target: any): EventTargetInternalData {
  * Normalize options.
  * @param options The options to normalize.
  */
-function normalizeAddOptions<TEvent extends Event>(
+function normalizeAddOptions(
     type: string,
-    callback: EventTarget.EventListener<TEvent> | null | undefined,
+    callback: EventTarget.EventListener<any, any> | null | undefined,
     options: boolean | EventTarget.AddOptions | undefined,
 ): {
     type: string
-    callback: EventTarget.EventListener | undefined
+    callback: EventTarget.EventListener<any, any> | undefined
     capture: boolean
     passive: boolean
     once: boolean
@@ -550,13 +454,13 @@ function normalizeAddOptions<TEvent extends Event>(
  * Normalize options.
  * @param options The options to normalize.
  */
-function normalizeOptions<TEvent extends Event>(
+function normalizeOptions(
     type: string,
-    callback: EventTarget.EventListener<TEvent> | null | undefined,
+    callback: EventTarget.EventListener<any, any> | null | undefined,
     options: boolean | EventTarget.Options | undefined,
 ): {
     type: string
-    callback: EventTarget.EventListener | null | undefined
+    callback: EventTarget.EventListener<any, any> | undefined
     capture: boolean
 } {
     assertCallback(callback)
@@ -580,140 +484,12 @@ function normalizeOptions<TEvent extends Event>(
  * Assert the type of 'callback' argument.
  * @param callback The callback to check.
  */
-function assertCallback(
-    callback: any,
-): asserts callback is EventTarget.EventListener | null | undefined {
+function assertCallback(callback: any): void {
     assertType(
         typeof callback === "function" ||
             typeof callback === "object" ||
             typeof callback === "undefined",
         "The 'callback' argument must be a function or object.",
-    )
-}
-
-/**
- * Get the listener list of the given type.
- * If the listener list has not been initialized, initialize and return it.
- * @param listenerMap The listener list map.
- * @param type The event type to get.
- */
-function ensureListenerList(
-    listenerMap: Record<string, ListenerList | undefined>,
-    type: string,
-): ListenerList {
-    return (listenerMap[type] ??= {
-        attr: undefined,
-        cow: false,
-        listeners: [],
-    })
-}
-
-/**
- * Add the given listener.
- * Does copy-on-write if needed.
- * @param list The listener list.
- * @param newListener The new listener.
- */
-function addListener(list: ListenerList, newListener: Listener): void {
-    if (list.cow) {
-        list.cow = false
-        list.listeners = [...list.listeners, newListener]
-    } else {
-        list.listeners.push(newListener)
-    }
-}
-
-/**
- * Find the given listener and remove it.
- * @param listenerMap The listener list map.
- * @param type The event type to find.
- * @param callback The callback function to find.
- * @param capture The capture flag to find.
- */
-function findAndRemoveListener(
-    listenerMap: Record<string, ListenerList | undefined>,
-    type: string,
-    callback: EventTarget.EventListener,
-    capture: boolean,
-): void {
-    const list = listenerMap[type]
-    if (list == null) {
-        return
-    }
-
-    const index = findIndexOfListener(list.listeners, callback, capture)
-    if (index === -1) {
-        return
-    }
-
-    removeListener(list, index)
-}
-
-/**
- * Find the index of given listener.
- * This returns `-1` if not found.
- * @param listeners The listener list.
- * @param callback The callback function to find.
- * @param capture The capture flag to find.
- */
-function findIndexOfListener(
-    listeners: Listener[],
-    callback: EventTarget.EventListener,
-    capture: boolean,
-): number {
-    for (let i = 0; i < listeners.length; ++i) {
-        const listener = listeners[i]
-        if (
-            listener.callback === callback &&
-            !isEventAttribute(listener) &&
-            isCapture(listener) === capture
-        ) {
-            return i
-        }
-    }
-    return -1
-}
-
-/**
- * Dispose a listener.
- * @param list The listener list.
- * @param index The index of the target listener.
- * @param disableCow Disable copy-on-write if true.
- * @returns `true` if it mutated the list directly.
- */
-function removeListener(
-    list: ListenerList,
-    index: number,
-    disableCow = false,
-): boolean {
-    const listener = list.listeners[index]
-
-    // Set the removed flag.
-    listener.flags |= ListenerFlags.Removed
-
-    // Dispose the abort signal listener if exists.
-    if (listener.signal) {
-        listener.signal.removeEventListener("abort", listener.signalListener)
-    }
-
-    // Remove it from the array.
-    if (list.cow && !disableCow) {
-        list.cow = false
-        list.listeners = list.listeners.filter((_, i) => i !== index)
-        return false
-    }
-    list.listeners.splice(index, 1)
-    return true
-}
-
-/**
- * Check if the given listener has the event attribute flag or not.
- * @param listener The listener to check.
- */
-function isEventAttribute(listener: Listener): boolean {
-    return (
-        (listener.flags & ListenerFlags.EventAttribute) ===
-        ListenerFlags.EventAttribute
     )
 }
 
@@ -727,7 +503,7 @@ function isEventAttribute(listener: Listener): boolean {
  */
 function warnDuplicate(
     listener: Listener,
-    callback: EventTarget.EventListener,
+    callback: EventTarget.EventListener<any, any>,
     passive: boolean,
     once: boolean,
     signal: EventTarget.AbortSignal | undefined,
@@ -760,63 +536,6 @@ function warnDuplicate(
             different,
         )
     }
-}
-
-/**
- * Call an event listener.
- * @param callback The function to call.
- * @param target The event target object for `thisArg`.
- * @param event The event object for the first argument.
- * @param attribute `true` if this callback is an event attribute handler.
- */
-function invoke(
-    callback: EventTarget.EventListener,
-    target: EventTarget,
-    event: Event,
-    attribute: boolean,
-): void {
-    try {
-        if (typeof callback === "function") {
-            callback.call(target, event)
-        } else if (typeof callback.handleEvent === "function" && !attribute) {
-            callback.handleEvent(event)
-        }
-    } catch (thrownError) {
-        warn("An event listener threw an exception: %o", callback)
-        error(thrownError)
-    }
-}
-
-/**
- * Check if the given listener has the `capture` flag or not.
- * @param listener The listener to check.
- */
-function isCapture(listener: Listener): boolean {
-    return (listener.flags & ListenerFlags.Capture) === ListenerFlags.Capture
-}
-
-/**
- * Check if the given listener has the `passive` flag or not.
- * @param listener The listener to check.
- */
-function isPassive(listener: Listener): boolean {
-    return (listener.flags & ListenerFlags.Passive) === ListenerFlags.Passive
-}
-
-/**
- * Check if the given listener has the `once` flag or not.
- * @param listener The listener to check.
- */
-function isOnce(listener: Listener): boolean {
-    return (listener.flags & ListenerFlags.Once) === ListenerFlags.Once
-}
-
-/**
- * Check if the given listener has the `removed` flag or not.
- * @param listener The listener to check.
- */
-function isRemoved(listener: Listener): boolean {
-    return (listener.flags & ListenerFlags.Removed) === ListenerFlags.Removed
 }
 
 // Set enumerable

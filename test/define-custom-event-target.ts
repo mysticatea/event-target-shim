@@ -1,6 +1,6 @@
 import assert from "assert"
 import { defineCustomEventTarget, Event, EventTarget } from "../src/index"
-import { countEventListeners } from "../src/lib/event-target"
+import { countEventListeners } from "./lib/count-event-listeners"
 
 describe("'defineCustomEventTarget' function", () => {
     describe("when '{foo:Event; bar:Event}' type argument is present, the returned valuu is", () => {

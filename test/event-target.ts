@@ -2,9 +2,9 @@ import { spy } from "@mysticatea/spy"
 import assert from "assert"
 import DOMException from "domexception"
 import { Event, EventTarget } from "../src/index"
-import { countEventListeners } from "../src/lib/event-target"
 import { Global } from "../src/lib/global"
 import { AbortSignalStub } from "./lib/abort-signal-stub"
+import { countEventListeners } from "./lib/count-event-listeners"
 import { setupErrorCheck } from "./lib/setup-error-check"
 
 const NativeEventTarget: typeof Event = Global?.EventTarget
@@ -361,10 +361,15 @@ describe("'EventTarget' class", () => {
         })
 
         it("should not throw even if empty object had been added", () => {
+            const f = {}
             // @ts-expect-error
-            target.addEventListener("foo", {})
+            target.addEventListener("foo", f)
             const retv = target.dispatchEvent(new Event("foo"))
             assert.strictEqual(retv, true)
+            assertWarning(
+                "An event listener is not a function and doesn't have 'handleEvent' method: %o",
+                f,
+            )
         })
 
         it("should call obj.handleEvent method even if added later", () => {
@@ -1121,6 +1126,13 @@ describe("'EventTarget' class", () => {
         })
 
         describe("if the argument is a plain object, the event object in the listener", () => {
+            // eslint-disable-next-line no-shadow
+            let target: EventTarget<{ foo: Event }, "strict">
+
+            beforeEach(() => {
+                target = new EventTarget()
+            })
+
             it("'type' property should be the same value as the original.", () => {
                 const event = { type: "foo" } as const
                 let ok = false

@@ -310,7 +310,7 @@ export namespace Event {
     }
 }
 
-export { $ as getEventData }
+export { $ as getEventInternalData }
 
 //------------------------------------------------------------------------------
 // Helpers

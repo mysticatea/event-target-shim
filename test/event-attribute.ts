@@ -6,7 +6,7 @@ import {
     getEventAttributeValue,
     setEventAttributeValue,
 } from "../src/index"
-import { countEventListeners } from "../src/lib/event-target"
+import { countEventListeners } from "./lib/count-event-listeners"
 
 describe("Event attribute handlers", () => {
     let target: EventTarget
