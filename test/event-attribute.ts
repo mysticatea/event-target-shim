@@ -6,9 +6,13 @@ import {
     getEventAttributeValue,
     setEventAttributeValue,
 } from "../src/index"
+import { InvalidAttributeHandler } from "../src/lib/warnings"
 import { countEventListeners } from "./lib/count-event-listeners"
+import { setupErrorCheck } from "./lib/setup-error-check"
 
 describe("Event attribute handlers", () => {
+    const { assertWarning } = setupErrorCheck()
+
     let target: EventTarget
     beforeEach(() => {
         target = new EventTarget()
@@ -56,6 +60,7 @@ describe("Event attribute handlers", () => {
             // @ts-expect-error
             setEventAttributeValue(target, "foo", f)
             assert.strictEqual(getEventAttributeValue(target, "foo"), f)
+            assertWarning(InvalidAttributeHandler, f)
         })
 
         it("should return the last set function if listeners are set by 'setEventAttributeValue' multiple times.", () => {
@@ -98,10 +103,12 @@ describe("Event attribute handlers", () => {
         })
 
         it("should add an event listener if an object is given.", () => {
+            const f = {}
             // @ts-expect-error
-            setEventAttributeValue(target, "foo", {})
+            setEventAttributeValue(target, "foo", f)
             assert.strictEqual(countEventListeners(target), 1)
             assert.strictEqual(countEventListeners(target, "foo"), 1)
+            assertWarning(InvalidAttributeHandler, f)
         })
 
         it("should remove an event listener if null is given.", () => {
@@ -117,6 +124,8 @@ describe("Event attribute handlers", () => {
             // @ts-expect-error
             setEventAttributeValue(target, "foo", 3)
             assert.strictEqual(countEventListeners(target, "foo"), 0)
+
+            assertWarning(InvalidAttributeHandler, 3)
         })
 
         it("should do nothing if primitive is given and the target doesn't have listeners.", () => {
@@ -204,6 +213,7 @@ describe("Event attribute handlers", () => {
                 0,
                 "handleEvent should not be called",
             )
+            assertWarning(InvalidAttributeHandler, f)
         })
     })
 })

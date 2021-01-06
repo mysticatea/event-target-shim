@@ -109,13 +109,11 @@ You can customize error/wanring behavior of `EventTarget`-shim.
 
 ### ▶ `setErrorHandler(handler)`
 
-Set your error handler.
+Set your error handler. The error means exceptions that event listeners threw.
 
 The default handler is `undefined`. It dispatches an [ErrorEvent](https://developer.mozilla.org/ja/docs/Web/API/ErrorEvent) on `window` on browsers, or emits an [`uncaughtException` event](https://nodejs.org/api/process.html#process_event_uncaughtexception) on `process` on Node.js.
 
-The error handler will be called when...
-
-- A registered event listener threw exceptions.
+The first argument of the error handler is a thrown error.
 
 #### Example
 
@@ -130,29 +128,29 @@ setErrorHandler((error) => {
 
 ### ▶ `setWarningHandler(handler)`
 
-Set your warning handler.
+Set your warning handler. The warning is reported when `EventTarget` or `Event` doesn't throw any errors but ignores operations silently.
 
 The default handler is `undefined`. It prints warnings with the `console.warn` method.
 
+The first argument of the warning handler is a reported warning information. It has three properties:
+
+- `code` ... A warning code. Use it for i18n.
+- `message` ... The warning message in English.
+- `args` ... The array of arguments for replacing placeholders in the message.
+
 The warning handler will be called when...
 
-- In `EventTarget.prototype.addEventListener` method, the given event listener was duplicated (then ignored) and the `passive`, `once`, or `signal` options were different between the given listener and the existing listener.<br>
-  In this case, those new options are abandoned.
-- A registered event listener threw exceptions.
-- The `Event.prototype.cancelBubble` setter received a falsy value.<br>
-  In this case, the setter ignores the value.
-- The `Event.prototype.returnValue` setter received a truthy value.<br>
-  In this case, the setter ignores the value.
-- The `Event.prototype.returnValue` setter received a falsy value in a passive listener.<br>
-  In this case, the setter ignores the value.
-- The `Event.prototype.returnValue` setter received a falsy value and the `cancelable` flag of the event was `false`.<br>
-  In this case, the setter ignores the value.
-- The `Event.prototype.preventDefault` method was called in a passive listener.<br>
-  In this case, the method does nothing.
-- The `Event.prototype.preventDefault` method was called and the `cancelable` flag of the event was `false`.<br>
-  In this case, the method does nothing.
-- The `Event.prototype.initEvent` method was called while dispatching.<br>
-  In this case, the method does nothing.
+| Code    | Description                                                                                                                                                                                                                                                            |
+| :------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"W01"` | `Event.prototype.initEvent` method was called while dispatching. In this case, the method does nothing.                                                                                                                                                                |
+| `"W02"` | `Event.prototype.cancelBubble` setter received a falsy value. In this case, the setter does nothing.                                                                                                                                                                   |
+| `"W03"` | `Event.prototype.returnValue` setter received a truthy value. In this case, the setter does nothing.                                                                                                                                                                   |
+| `"W04"` | `Event.prototype.preventDefault` method was called or `Event.prototype.returnValue` setter received a falsy value, but the event was not cancelable. In this case, the method or setter does nothing.                                                                  |
+| `"W05"` | `Event.prototype.preventDefault` method was called or `Event.prototype.returnValue` setter received a falsy value, but that's in a passive listener. In this case, the method or setter does nothing.                                                                  |
+| `"W06"` | `EventTarget.prototype.addEventListener` method received a listener that has been added already. In this case, the method does nothing.                                                                                                                                |
+| `"W07"` | `EventTarget.prototype.addEventListener` method received a listener that has been added already, and any of `passive`, `once`, and `signal` options are different between the existing listener and the ignored listener. In this case, the new options are abandoned. |
+| `"W08"` | `EventTarget.prototype.{addEventListener,removeEventListener}` methods received an invalid event listener. In this case, the methods ignore the listener.                                                                                                              |
+| `"W09"` | `setEventAttributeValue` function received an invalid event attribute handler. If that was a primitive value, the function removes the current event attribute handler. Otherwise, the function adopts the listener, but the listener will never be called.            |
 
 #### Example
 
@@ -160,8 +158,8 @@ The warning handler will be called when...
 import { setWarningHandler } from "event-target-shim";
 
 // Print log only.
-setWarningHandler((message, args) => {
-  console.warn(message, ...args);
+setWarningHandler((warning) => {
+  console.warn(warning.message, ...warning.args);
 });
 ```
 

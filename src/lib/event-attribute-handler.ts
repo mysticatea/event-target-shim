@@ -2,7 +2,7 @@ import { Event } from "./event"
 import { EventTarget, getEventTargetInternalData } from "./event-target"
 import { addListener, ListenerList, removeListener } from "./listener-list"
 import { ensureListenerList } from "./listener-list-map"
-import { warn } from "./misc"
+import { InvalidAttributeHandler } from "./warnings"
 
 /**
  * Get the current value of a given event attribute.
@@ -25,13 +25,15 @@ export function getEventAttributeValue<
  * @param type The event type.
  * @param callback The event listener.
  */
-export function setEventAttributeValue<
-    TEventTarget extends EventTarget<any, any>
->(
-    target: TEventTarget,
+export function setEventAttributeValue(
+    target: EventTarget<any, any>,
     type: string,
-    callback: EventTarget.CallbackFunction<TEventTarget, any> | null,
+    callback: EventTarget.CallbackFunction<any, any> | null,
 ): void {
+    if (callback != null && typeof callback !== "function") {
+        InvalidAttributeHandler.warn(callback)
+    }
+
     if (
         typeof callback === "function" ||
         (typeof callback === "object" && callback !== null)
@@ -106,10 +108,6 @@ function defineEventAttributeCallback(
         const callback = list.attrCallback
         if (typeof callback === "function") {
             callback.call(this, event)
-        } else {
-            warn(
-                "Event attribute handler must be a function. It doesn't support the object that has 'handleEvent' method.",
-            )
         }
     }
 }

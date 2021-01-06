@@ -1,6 +1,12 @@
 import assert from "assert"
 import { Event, EventTarget } from "../src/index"
 import { Global } from "../src/lib/global"
+import {
+    FalsyWasAssignedToCancelBubble,
+    InitEventWasCalledWhileDispatching,
+    NonCancelableEventWasCanceled,
+    TruthyWasAssignedToReturnValue,
+} from "../src/lib/warnings"
 import { setupErrorCheck } from "./lib/setup-error-check"
 
 const NativeEvent: typeof Event = Global.Event
@@ -343,9 +349,7 @@ describe("'Event' class", () => {
             event.stopPropagation()
             event.cancelBubble = false
             assert.strictEqual(event.cancelBubble, true)
-            assertWarning(
-                "Assigning any falsy value to 'cancelBubble' property has no effect.",
-            )
+            assertWarning(FalsyWasAssignedToCancelBubble)
         })
 
         it("should NOT be changed by the assignment of false after 'stopImmediatePropagation' method was called", () => {
@@ -353,9 +357,7 @@ describe("'Event' class", () => {
             event.stopImmediatePropagation()
             event.cancelBubble = false
             assert.strictEqual(event.cancelBubble, true)
-            assertWarning(
-                "Assigning any falsy value to 'cancelBubble' property has no effect.",
-            )
+            assertWarning(FalsyWasAssignedToCancelBubble)
         })
 
         it("should NOT be changed by the assignment of false after the assignment of true", () => {
@@ -363,9 +365,7 @@ describe("'Event' class", () => {
             event.cancelBubble = true
             event.cancelBubble = false
             assert.strictEqual(event.cancelBubble, true)
-            assertWarning(
-                "Assigning any falsy value to 'cancelBubble' property has no effect.",
-            )
+            assertWarning(FalsyWasAssignedToCancelBubble)
         })
     })
 
@@ -436,7 +436,7 @@ describe("'Event' class", () => {
             const event = new Event("foo")
             event.preventDefault()
             assert.strictEqual(event.returnValue, true)
-            assertWarning("Unable to preventDefault on non-cancelable events.")
+            assertWarning(NonCancelableEventWasCanceled)
         })
 
         it("should be false after 'preventDefault' method was called if 'cancelable' is true", () => {
@@ -449,7 +449,7 @@ describe("'Event' class", () => {
             const event = new Event("foo")
             event.returnValue = false
             assert.strictEqual(event.returnValue, true)
-            assertWarning("Unable to preventDefault on non-cancelable events.")
+            assertWarning(NonCancelableEventWasCanceled)
         })
 
         it("should be changed by assignment if 'cancelable' is true", () => {
@@ -463,9 +463,7 @@ describe("'Event' class", () => {
             event.preventDefault()
             event.returnValue = true
             assert.strictEqual(event.returnValue, false)
-            assertWarning(
-                "Assigning any truthy value to 'returnValue' property has no effect.",
-            )
+            assertWarning(TruthyWasAssignedToReturnValue)
         })
 
         it("should NOT be changed by the assignment of true after the assginment of false", () => {
@@ -473,9 +471,7 @@ describe("'Event' class", () => {
             event.returnValue = false
             event.returnValue = true
             assert.strictEqual(event.returnValue, false)
-            assertWarning(
-                "Assigning any truthy value to 'returnValue' property has no effect.",
-            )
+            assertWarning(TruthyWasAssignedToReturnValue)
         })
     })
 
@@ -488,7 +484,7 @@ describe("'Event' class", () => {
         it("should return undefined", () => {
             const event = new Event("foo")
             assert.strictEqual(event.preventDefault(), undefined)
-            assertWarning("Unable to preventDefault on non-cancelable events.")
+            assertWarning(NonCancelableEventWasCanceled)
         })
     })
 
@@ -502,7 +498,7 @@ describe("'Event' class", () => {
             const event = new Event("foo")
             event.preventDefault()
             assert.strictEqual(event.defaultPrevented, false)
-            assertWarning("Unable to preventDefault on non-cancelable events.")
+            assertWarning(NonCancelableEventWasCanceled)
         })
 
         it("should be false after 'preventDefault' method was called if 'cancelable' is true", () => {
@@ -666,9 +662,7 @@ describe("'Event' class", () => {
             target.dispatchEvent(event)
 
             assert.strictEqual(event.type, "foo")
-            assertWarning(
-                "'initEvent' method calls are ignored while event dispatching.",
-            )
+            assertWarning(InitEventWasCalledWhileDispatching)
         })
     })
 

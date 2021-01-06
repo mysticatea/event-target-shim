@@ -1,6 +1,13 @@
 import { EventTarget } from "./event-target" // Used as only type, so no circular.
 import { Global } from "./global"
-import { assertType, warn } from "./misc"
+import { assertType } from "./misc"
+import {
+    CanceledInPassiveListener,
+    FalsyWasAssignedToCancelBubble,
+    InitEventWasCalledWhileDispatching,
+    NonCancelableEventWasCanceled,
+    TruthyWasAssignedToReturnValue,
+} from "./warnings"
 
 /*eslint-disable class-methods-use-this */
 
@@ -177,9 +184,7 @@ export class Event<TEventType extends string = string> {
         if (value) {
             $(this).stopPropagationFlag = true
         } else {
-            warn(
-                "Assigning any falsy value to 'cancelBubble' property has no effect.",
-            )
+            FalsyWasAssignedToCancelBubble.warn()
         }
     }
 
@@ -226,9 +231,7 @@ export class Event<TEventType extends string = string> {
         if (!value) {
             setCancelFlag($(this))
         } else {
-            warn(
-                "Assigning any truthy value to 'returnValue' property has no effect.",
-            )
+            TruthyWasAssignedToReturnValue.warn()
         }
     }
 
@@ -276,9 +279,7 @@ export class Event<TEventType extends string = string> {
     initEvent(type: string, bubbles = false, cancelable = false) {
         const data = $(this)
         if (data.dispatchFlag) {
-            warn(
-                "'initEvent' method calls are ignored while event dispatching.",
-            )
+            InitEventWasCalledWhileDispatching.warn()
             return
         }
 
@@ -402,13 +403,11 @@ function $(event: unknown): EventInternalData {
  */
 function setCancelFlag(data: EventInternalData) {
     if (data.inPassiveListenerFlag) {
-        warn(
-            "Unable to preventDefault inside passive event listener invocation.",
-        )
+        CanceledInPassiveListener.warn()
         return
     }
     if (!data.cancelable) {
-        warn("Unable to preventDefault on non-cancelable events.")
+        NonCancelableEventWasCanceled.warn()
         return
     }
 

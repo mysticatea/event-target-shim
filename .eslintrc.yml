@@ -6,6 +6,8 @@ ignorePatterns:
   - /dist
   - /node_modules
   - /test/fixtures/types.ts
+  # parser raised unexpected error.
+  - /src/lib/warnings.ts
 
 extends:
   - plugin:@mysticatea/es2020
@@ -15,28 +17,6 @@ globals:
 
 rules:
   no-console: error
-  spaced-comment:
-    - error
-    - always
-    - block:
-        balanced: true
-        markers:
-          - eslint
-          - eslint-env
-          - eslint-disable
-          - eslint-enable
-          - exported
-          - globals
-          - istanbul
-      line:
-        exceptions: ["-", "=", "/"]
-        markers:
-          - eslint-disable-line
-          - eslint-disable-next-line
-          - istanbul
-          - "TODO:"
-          - "FIXME:"
-          - "/"
   "@mysticatea/ts/explicit-member-accessibility": "off"
   "@mysticatea/prettier": "off"
 
@@ -58,10 +38,6 @@ overrides:
 
   - files: src/**
     rules:
+      # Avoid iteration because transpiled code will inflate much.
       no-restricted-syntax: [error, ForOfStatement]
       "@mysticatea/prefer-for-of": "off"
-
-  - files: test/fixtures/entrypoint.ts
-    rules:
-      "@mysticatea/ts/no-require-imports": "off"
-      "@mysticatea/ts/no-var-requires": "off"

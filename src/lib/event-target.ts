@@ -4,6 +4,7 @@ import { EventWrapper } from "./event-wrapper"
 import { Global } from "./global"
 import {
     invokeCallback,
+    isCapture,
     isOnce,
     isPassive,
     isRemoved,
@@ -20,7 +21,12 @@ import {
     ensureListenerList,
     ListenerListMap,
 } from "./listener-list-map"
-import { assert, assertType, warn } from "./misc"
+import { assert, assertType, format } from "./misc"
+import {
+    EventListenerWasDuplicated,
+    InvalidEventListener,
+    OptionWasIgnored,
+} from "./warnings"
 
 /**
  * An implementation of the `EventTarget` interface.
@@ -113,7 +119,7 @@ export class EventTarget<
         // Find existing listener.
         const i = findIndexOfListener(list, callback, capture)
         if (i !== -1) {
-            warnDuplicate(list.listeners[i], callback, passive, once, signal)
+            warnDuplicate(list.listeners[i], passive, once, signal)
             return
         }
 
@@ -485,56 +491,48 @@ function normalizeOptions(
  * @param callback The callback to check.
  */
 function assertCallback(callback: any): void {
-    assertType(
+    if (
         typeof callback === "function" ||
-            typeof callback === "object" ||
-            typeof callback === "undefined",
-        "The 'callback' argument must be a function or object.",
-    )
+        (typeof callback === "object" &&
+            callback !== null &&
+            typeof callback.handleEvent === "function")
+    ) {
+        return
+    }
+    if (callback == null || typeof callback === "object") {
+        InvalidEventListener.warn(callback)
+        return
+    }
+
+    throw new TypeError(format(InvalidEventListener.message, [callback]))
 }
 
 /**
  * Print warning for duplicated.
  * @param listener The current listener that is duplicated.
- * @param callback The callback function of the new duplicated listener.
  * @param passive The passive flag of the new duplicated listener.
  * @param once The once flag of the new duplicated listener.
  * @param signal The signal object of the new duplicated listener.
  */
 function warnDuplicate(
     listener: Listener,
-    callback: EventTarget.EventListener<any, any>,
     passive: boolean,
     once: boolean,
     signal: EventTarget.AbortSignal | undefined,
 ): void {
-    const different: string[] = []
+    EventListenerWasDuplicated.warn(
+        isCapture(listener) ? "capture" : "bubble",
+        listener.callback,
+    )
+
     if (isPassive(listener) !== passive) {
-        different.push("passive")
+        OptionWasIgnored.warn("passive")
     }
     if (isOnce(listener) !== once) {
-        different.push("once")
+        OptionWasIgnored.warn("once")
     }
     if (listener.signal !== signal) {
-        different.push("signal")
-    }
-
-    const message =
-        "A listener wasn't added because it has been added already: %o"
-    if (different.length === 0) {
-        warn(message, callback)
-    } else if (different.length === 1) {
-        warn(
-            `${message}\nThe %o option value was different, but the new value was ignored.`,
-            callback,
-            different[0],
-        )
-    } else {
-        warn(
-            `${message}\nThe %o option values ware different, but the new values ware ignored.`,
-            callback,
-            different,
-        )
+        OptionWasIgnored.warn("signal")
     }
 }
 

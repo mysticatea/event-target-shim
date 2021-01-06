@@ -1,6 +1,6 @@
+import { reportError } from "./error-handler"
 import { Event } from "./event" // Used as only type, so no circular.
 import { EventTarget } from "./event-target" // Used as only type, so no circular.
-import { error, warn } from "./misc"
 
 /**
  * The event listener concept.
@@ -135,15 +135,9 @@ export function invokeCallback(
             callback.call(target, event)
         } else if (typeof callback.handleEvent === "function") {
             callback.handleEvent(event)
-        } else {
-            warn(
-                "An event listener is not a function and doesn't have 'handleEvent' method: %o",
-                callback,
-            )
         }
     } catch (thrownError) {
-        warn("An event listener threw an exception: %o", callback)
-        error(thrownError)
+        reportError(thrownError)
     }
 }
 

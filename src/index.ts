@@ -1,3 +1,4 @@
+import { setErrorHandler } from "./lib/error-handler"
 import { Event } from "./lib/event"
 import {
     getEventAttributeValue,
@@ -5,7 +6,7 @@ import {
 } from "./lib/event-attribute-handler"
 import { EventTarget } from "./lib/event-target"
 import { defineCustomEventTarget, defineEventAttribute } from "./lib/legacy"
-import { setErrorHandler, setWarningHandler } from "./lib/misc"
+import { setWarningHandler } from "./lib/warning-handler"
 
 export default EventTarget
 export {

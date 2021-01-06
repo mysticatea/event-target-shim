@@ -1,8 +1,11 @@
 import assert from "assert"
 import { defineCustomEventTarget, Event, EventTarget } from "../src/index"
 import { countEventListeners } from "./lib/count-event-listeners"
+import { setupErrorCheck } from "./lib/setup-error-check"
 
 describe("'defineCustomEventTarget' function", () => {
+    setupErrorCheck()
+
     describe("when '{foo:Event; bar:Event}' type argument is present, the returned valuu is", () => {
         const MyEventTarget = defineCustomEventTarget<{
             foo: Event<"foo">

@@ -1,9 +1,10 @@
 import assert from "assert"
 import { setErrorHandler, setWarningHandler } from "../../src"
+import { Warning } from "../../src/lib/warning-handler"
 
 export function setupErrorCheck() {
     const errors: Error[] = []
-    const warnings: { message: string; args: any[] }[] = []
+    const warnings: setWarningHandler.Warning[] = []
 
     beforeEach(() => {
         errors.length = 0
@@ -11,16 +12,20 @@ export function setupErrorCheck() {
         setErrorHandler(error => {
             errors.push(error)
         })
-        setWarningHandler((message, args) => {
-            warnings.push({ message, args })
+        setWarningHandler(warning => {
+            warnings.push(warning)
         })
     })
 
-    afterEach(() => {
+    afterEach(function () {
         setErrorHandler(undefined)
         setWarningHandler(undefined)
-        assert.deepStrictEqual(errors, [], "Errors should be nothing.")
-        assert.deepStrictEqual(warnings, [], "Warnings should be nothing.")
+        try {
+            assert.deepStrictEqual(errors, [], "Errors should be nothing.")
+            assert.deepStrictEqual(warnings, [], "Warnings should be nothing.")
+        } catch (error) {
+            ;(this.test as any)?.error(error)
+        }
     })
 
     function assertError(errorOrMessage: Error | string): void {
@@ -33,9 +38,12 @@ export function setupErrorCheck() {
         )
     }
 
-    function assertWarning(message: string, ...args: any[]): void {
+    function assertWarning<TArgs extends any[]>(
+        warning: Warning<TArgs>,
+        ...args: TArgs
+    ): void {
         const actualWarning = warnings.shift()
-        assert.deepStrictEqual(actualWarning, { message, args })
+        assert.deepStrictEqual(actualWarning, { ...warning, args })
     }
 
     return { assertError, assertWarning }

@@ -6,6 +6,7 @@ declare const global: any
 /**
  * The global object.
  */
+//istanbul ignore next
 export const Global: any =
     typeof window !== "undefined"
         ? window

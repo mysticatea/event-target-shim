@@ -1,8 +1,15 @@
-import { spy } from "@mysticatea/spy"
+import { Spy, spy } from "@mysticatea/spy"
 import assert from "assert"
 import DOMException from "domexception"
 import { Event, EventTarget } from "../src/index"
 import { Global } from "../src/lib/global"
+import {
+    CanceledInPassiveListener,
+    EventListenerWasDuplicated,
+    InvalidEventListener,
+    NonCancelableEventWasCanceled,
+    OptionWasIgnored,
+} from "../src/lib/warnings"
 import { AbortSignalStub } from "./lib/abort-signal-stub"
 import { countEventListeners } from "./lib/count-event-listeners"
 import { setupErrorCheck } from "./lib/setup-error-check"
@@ -51,6 +58,10 @@ describe("'EventTarget' class", () => {
             target.addEventListener("foo", undefined)
 
             assert.strictEqual(countEventListeners(target), 0)
+            assertWarning(InvalidEventListener, undefined)
+            assertWarning(InvalidEventListener, undefined)
+            assertWarning(InvalidEventListener, null)
+            assertWarning(InvalidEventListener, undefined)
         })
 
         it("should throw a TypeError if callback is a primitive.", () => {
@@ -84,9 +95,11 @@ describe("'EventTarget' class", () => {
         })
 
         it("should add a given object.", () => {
+            const f = {}
             // @ts-expect-error
-            target.addEventListener("foo", {})
+            target.addEventListener("foo", f)
             assert.strictEqual(countEventListeners(target), 1)
+            assertWarning(InvalidEventListener, f)
         })
 
         it("should add multiple given event listeners.", () => {
@@ -123,10 +136,7 @@ describe("'EventTarget' class", () => {
             assert.strictEqual(countEventListeners(target), 2)
             assert.strictEqual(countEventListeners(target, "foo"), 1)
             assert.strictEqual(countEventListeners(target, "bar"), 1)
-            assertWarning(
-                "A listener wasn't added because it has been added already: %o",
-                f,
-            )
+            assertWarning(EventListenerWasDuplicated, "bubble", f)
         })
 
         it("should add the same listener twice if capture flag is different.", () => {
@@ -153,11 +163,8 @@ describe("'EventTarget' class", () => {
             target.addEventListener("foo", f, { passive: false })
 
             assert.strictEqual(countEventListeners(target), 1)
-            assertWarning(
-                "A listener wasn't added because it has been added already: %o\nThe %o option value was different, but the new value was ignored.",
-                f,
-                "passive",
-            )
+            assertWarning(EventListenerWasDuplicated, "bubble", f)
+            assertWarning(OptionWasIgnored, "passive")
         })
 
         it("should not add the same listener twice even if once flag is different.", () => {
@@ -166,11 +173,8 @@ describe("'EventTarget' class", () => {
             target.addEventListener("foo", f, { once: false })
 
             assert.strictEqual(countEventListeners(target), 1)
-            assertWarning(
-                "A listener wasn't added because it has been added already: %o\nThe %o option value was different, but the new value was ignored.",
-                f,
-                "once",
-            )
+            assertWarning(EventListenerWasDuplicated, "bubble", f)
+            assertWarning(OptionWasIgnored, "once")
         })
 
         it("should not add the same listener twice even if signal flag is different.", () => {
@@ -179,11 +183,8 @@ describe("'EventTarget' class", () => {
             target.addEventListener("foo", f, { signal: new AbortSignalStub() })
 
             assert.strictEqual(countEventListeners(target), 1)
-            assertWarning(
-                "A listener wasn't added because it has been added already: %o\nThe %o option value was different, but the new value was ignored.",
-                f,
-                "signal",
-            )
+            assertWarning(EventListenerWasDuplicated, "bubble", f)
+            assertWarning(OptionWasIgnored, "signal")
         })
 
         it("should not add the same listener twice even if flags are different.", () => {
@@ -200,11 +201,10 @@ describe("'EventTarget' class", () => {
             })
 
             assert.strictEqual(countEventListeners(target), 1)
-            assertWarning(
-                "A listener wasn't added because it has been added already: %o\nThe %o option values ware different, but the new values ware ignored.",
-                f,
-                ["passive", "once", "signal"],
-            )
+            assertWarning(EventListenerWasDuplicated, "bubble", f)
+            assertWarning(OptionWasIgnored, "passive")
+            assertWarning(OptionWasIgnored, "once")
+            assertWarning(OptionWasIgnored, "signal")
         })
 
         it("should not add the listener if abort signal is present and the `signal.aborted` is true.", () => {
@@ -244,6 +244,10 @@ describe("'EventTarget' class", () => {
             target.removeEventListener("foo", undefined)
 
             assert.strictEqual(countEventListeners(target, "foo"), 1)
+            assertWarning(InvalidEventListener, undefined)
+            assertWarning(InvalidEventListener, undefined)
+            assertWarning(InvalidEventListener, null)
+            assertWarning(InvalidEventListener, undefined)
         })
 
         it("should throw a TypeError if callback is a primitive.", () => {
@@ -366,15 +370,13 @@ describe("'EventTarget' class", () => {
             target.addEventListener("foo", f)
             const retv = target.dispatchEvent(new Event("foo"))
             assert.strictEqual(retv, true)
-            assertWarning(
-                "An event listener is not a function and doesn't have 'handleEvent' method: %o",
-                f,
-            )
+            assertWarning(InvalidEventListener, f)
         })
 
         it("should call obj.handleEvent method even if added later", () => {
             const event = new Event("foo")
-            const f: any = {}
+            const f: { handleEvent?: Spy<(event: Event) => void> } = {}
+            // @ts-expect-error
             target.addEventListener("foo", f)
             f.handleEvent = spy()
             const retv = target.dispatchEvent(event)
@@ -387,6 +389,7 @@ describe("'EventTarget' class", () => {
             assert.strictEqual(f.handleEvent.calls[0].this, f)
             assert.strictEqual(f.handleEvent.calls[0].arguments[0], event)
             assert.strictEqual(retv, true)
+            assertWarning(InvalidEventListener, f)
         })
 
         it("should call a registered listener.", () => {
@@ -441,7 +444,7 @@ describe("'EventTarget' class", () => {
             const retv = target.dispatchEvent(new Event("foo"))
 
             assert.strictEqual(retv, true)
-            assertWarning("Unable to preventDefault on non-cancelable events.")
+            assertWarning(NonCancelableEventWasCanceled)
         })
 
         it("should return false if a listener called 'event.preventDefault()' and the event is cancelable.", () => {
@@ -468,9 +471,7 @@ describe("'EventTarget' class", () => {
             )
 
             assert.strictEqual(retv, true)
-            assertWarning(
-                "Unable to preventDefault inside passive event listener invocation.",
-            )
+            assertWarning(CanceledInPassiveListener)
         })
 
         it("should return true even if a listener called 'event.returnValue = false' if the event is not cancelable.", () => {
@@ -480,7 +481,7 @@ describe("'EventTarget' class", () => {
             const retv = target.dispatchEvent(new Event("foo"))
 
             assert.strictEqual(retv, true)
-            assertWarning("Unable to preventDefault on non-cancelable events.")
+            assertWarning(NonCancelableEventWasCanceled)
         })
 
         it("should return false if a listener called 'event.returnValue = false' and the event is cancelable.", () => {
@@ -507,9 +508,7 @@ describe("'EventTarget' class", () => {
             )
 
             assert.strictEqual(retv, true)
-            assertWarning(
-                "Unable to preventDefault inside passive event listener invocation.",
-            )
+            assertWarning(CanceledInPassiveListener)
         })
 
         it("should remove a listener if once option is present.", () => {
@@ -747,10 +746,7 @@ describe("'EventTarget' class", () => {
             assert.strictEqual(f3.calls.length, 1, "f3 should be called once")
 
             // happens at the second dispatch.
-            assertWarning(
-                "A listener wasn't added because it has been added already: %o",
-                f3,
-            )
+            assertWarning(EventListenerWasDuplicated, "bubble", f3)
         })
 
         it("should not call the listeners that were added after the 'dispatchEvent' method call. (the last listener is removed at first dispatch)", () => {
@@ -786,7 +782,6 @@ describe("'EventTarget' class", () => {
             assert.strictEqual(f1.calls.length, 1, "f1 should be called")
             assert.strictEqual(f2.calls.length, 1, "f2 should be called")
             assert.strictEqual(f3.calls.length, 1, "f3 should be called")
-            assertWarning("An event listener threw an exception: %o", f2)
             assertError(error)
         })
 
@@ -806,7 +801,6 @@ describe("'EventTarget' class", () => {
             assert.strictEqual(f1.calls.length, 1, "f1 should be called")
             assert.strictEqual(f2.calls.length, 1, "f2 should be called")
             assert.strictEqual(f3.calls.length, 1, "f3 should be called")
-            assertWarning("An event listener threw an exception: %o", f2)
             assertError(error)
         })
 
@@ -825,7 +819,6 @@ describe("'EventTarget' class", () => {
                 "the thrown value should be a DOMException",
             )
             assertError("This event has been in dispatching.")
-            assertWarning("An event listener threw an exception: %o", f)
         })
 
         it("should not call event listeners if given event was stopped", () => {
@@ -1126,8 +1119,16 @@ describe("'EventTarget' class", () => {
         })
 
         describe("if the argument is a plain object, the event object in the listener", () => {
+            class MyEvent extends Event {
+                writable: number
+                constructor(writable: number) {
+                    super("myevent")
+                    this.writable = writable
+                }
+            }
+
             // eslint-disable-next-line no-shadow
-            let target: EventTarget<{ foo: Event }, "strict">
+            let target: EventTarget<{ foo: Event; bar: MyEvent }, "strict">
 
             beforeEach(() => {
                 target = new EventTarget()
@@ -1392,6 +1393,29 @@ describe("'EventTarget' class", () => {
                 })
                 target.dispatchEvent(event)
                 assert(ok)
+            })
+
+            it("should redirect instance properties.", () => {
+                const event = { type: "bar", writable: 1 } as const
+                target.addEventListener("bar", wrapper => {
+                    assert.strictEqual(wrapper.writable, 1)
+                    wrapper.writable = 2
+                })
+                target.dispatchEvent(event)
+                assert.strictEqual(event.writable, 2)
+            })
+
+            it("should not throw even if prototype is null.", () => {
+                const event = Object.assign(
+                    Object.create(null) as {},
+                    { type: "bar", writable: 1 } as const,
+                )
+                target.addEventListener("bar", wrapper => {
+                    assert.strictEqual(wrapper.writable, 1)
+                    wrapper.writable = 2
+                })
+                target.dispatchEvent(event)
+                assert.strictEqual(event.writable, 2)
             })
         })
     })
