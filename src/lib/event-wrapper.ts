@@ -7,14 +7,12 @@ import { assertType } from "./misc"
  * This class controls the internal state of `Event`.
  * @see https://dom.spec.whatwg.org/#interface-event
  */
-export class EventWrapper<
-    TEventType extends string = string
-> extends Event<TEventType> {
+export class EventWrapper<TEventType extends string> extends Event<TEventType> {
     /**
      * Wrap a given event object to control states.
      * @param event The event-like object to wrap.
      */
-    static wrap<T extends Event>(event: T): T {
+    static wrap<T extends EventLike>(event: T): EventWrapperOf<T> {
         return new (getWrapperClassOf(event))(event)
     }
 
@@ -53,7 +51,7 @@ export class EventWrapper<
 
         const { original } = $(this)
         if ("stopPropagation" in original) {
-            original.stopPropagation()
+            original.stopPropagation!()
         }
     }
 
@@ -74,7 +72,7 @@ export class EventWrapper<
 
         const { original } = $(this)
         if ("stopImmediatePropagation" in original) {
-            original.stopImmediatePropagation()
+            original.stopImmediatePropagation!()
         }
     }
 
@@ -95,14 +93,14 @@ export class EventWrapper<
 
         const { original } = $(this)
         if ("preventDefault" in original) {
-            original.preventDefault()
+            original.preventDefault!()
         }
     }
 
     get timeStamp(): number {
         const { original } = $(this)
         if ("timeStamp" in original) {
-            return original.timeStamp
+            return original.timeStamp!
         }
         return super.timeStamp
     }
@@ -112,8 +110,12 @@ export class EventWrapper<
 // Helpers
 //------------------------------------------------------------------------------
 
+type EventLike = { readonly type: string } & Partial<Event>
+type EventWrapperOf<T extends EventLike> = Event<T["type"]> &
+    Omit<T, keyof Event>
+
 interface EventWrapperInternalData {
-    readonly original: Event
+    readonly original: EventLike
 }
 
 /**
@@ -153,13 +155,15 @@ if (typeof Global !== "undefined" && typeof Global.Event !== "undefined") {
  * Get the wrapper class of a given prototype.
  * @param originalEvent The event object to wrap.
  */
-function getWrapperClassOf(originalEvent: Event): any {
+function getWrapperClassOf<T extends EventLike>(
+    originalEvent: T,
+): { new (e: T): EventWrapperOf<T> } {
     const prototype = Object.getPrototypeOf(originalEvent)
     if (prototype == null) {
-        return EventWrapper
+        return EventWrapper as any
     }
 
-    let wrapper = wrapperClassCache.get(prototype)
+    let wrapper: any = wrapperClassCache.get(prototype)
     if (wrapper == null) {
         wrapper = defineWrapper(getWrapperClassOf(prototype), prototype)
         wrapperClassCache.set(prototype, wrapper)

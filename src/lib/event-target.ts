@@ -21,7 +21,7 @@ import {
     ensureListenerList,
     ListenerListMap,
 } from "./listener-list-map"
-import { assert, assertType, format } from "./misc"
+import { assertType, format } from "./misc"
 import {
     EventListenerWasDuplicated,
     InvalidEventListener,
@@ -214,19 +214,21 @@ export class EventTarget<
     dispatchEvent(event: EventTarget.FallbackEvent<TMode>): boolean
 
     // Implementation
-    dispatchEvent(event0: Event): boolean {
-        const list = $(this)[String(event0.type)]
+    dispatchEvent(
+        e:
+            | EventTarget.EventData<TEventMap, TMode, string>
+            | EventTarget.FallbackEvent<TMode>,
+    ): boolean {
+        const list = $(this)[String(e.type)]
         if (list == null) {
             return true
         }
 
-        const event =
-            event0 instanceof Event ? event0 : EventWrapper.wrap(event0)
+        const event = e instanceof Event ? e : EventWrapper.wrap(e)
         const eventData = getEventInternalData(event)
         if (eventData.dispatchFlag) {
             throw createInvalidStateError("This event has been in dispatching.")
         }
-        assert(event.isTrusted === false, "'isTrusted' property must be false")
 
         eventData.dispatchFlag = true
         eventData.target = eventData.currentTarget = this
