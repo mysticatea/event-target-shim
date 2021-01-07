@@ -40,10 +40,7 @@
     "test:mocha": "ts-node scripts/test",
     "watch:mocha": "mocha --require ts-node/register/transpile-only --extensions ts --watch-files src,test --watch \"test/*.ts\""
   },
-  "dependencies": {
-    "@types/rimraf": "^3.0.0",
-    "domexception": "^2.0.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@babel/core": "^7.12.10",
     "@babel/plugin-transform-runtime": "^7.12.10",
@@ -52,16 +49,13 @@
     "@mysticatea/spy": "^0.1.2",
     "@mysticatea/tools": "^0.1.1",
     "@rollup/plugin-babel": "^5.2.2",
-    "@rollup/plugin-commonjs": "^17.0.0",
-    "@rollup/plugin-json": "^4.1.0",
-    "@rollup/plugin-node-resolve": "^11.0.1",
     "@rollup/plugin-typescript": "^8.1.0",
-    "@types/domexception": "^2.0.1",
     "@types/istanbul-lib-coverage": "^2.0.3",
     "@types/istanbul-lib-report": "^3.0.0",
     "@types/istanbul-lib-source-maps": "^4.0.1",
     "@types/istanbul-reports": "^3.0.0",
     "@types/mocha": "^8.2.0",
+    "@types/rimraf": "^3.0.0",
     "assert": "^2.0.0",
     "babel-loader": "^8.2.2",
     "babel-plugin-istanbul": "^6.0.0",

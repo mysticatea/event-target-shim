@@ -1,13 +1,9 @@
 import babel from "@rollup/plugin-babel"
 import typescript from "@rollup/plugin-typescript"
-import commonjs from "@rollup/plugin-commonjs"
-import resolve from "@rollup/plugin-node-resolve"
-import json from "@rollup/plugin-json"
 import { terser } from "rollup-plugin-terser"
 
 export default [
     {
-        external: ["domexception"],
         input: "src/index.ts",
         output: {
             file: "dist/index.mjs",
@@ -17,7 +13,6 @@ export default [
         plugins: [typescript({ tsconfig: "tsconfig/build.json" })],
     },
     {
-        external: ["domexception"],
         input: "src/index.ts",
         output: {
             exports: "named",
@@ -28,9 +23,8 @@ export default [
         plugins: [typescript({ tsconfig: "tsconfig/build.json" })],
     },
     {
-        external: id =>
-            id === "domexception" || id.startsWith("@babel/runtime/"),
-        input: "src/index.ts",
+        external: id => id.startsWith("@babel/runtime/"),
+        input: "dist/index.mjs",
         output: {
             file: "dist/es5.mjs",
             format: "es",
@@ -40,7 +34,6 @@ export default [
             babel({
                 babelHelpers: "runtime",
                 babelrc: false,
-                extensions: [".ts", ".mjs", ".cjs", ".js", ".json"],
                 plugins: [["@babel/transform-runtime", { useESModules: true }]],
                 presets: [
                     [
@@ -54,13 +47,11 @@ export default [
                 ],
                 sourceMaps: true,
             }),
-            typescript({ tsconfig: "tsconfig/build.json" }),
         ],
     },
     {
-        external: id =>
-            id === "domexception" || id.startsWith("@babel/runtime/"),
-        input: "src/index.ts",
+        external: id => id.startsWith("@babel/runtime/"),
+        input: "dist/index.mjs",
         output: {
             exports: "named",
             file: "dist/es5.js",
@@ -71,7 +62,6 @@ export default [
             babel({
                 babelHelpers: "runtime",
                 babelrc: false,
-                extensions: [".ts", ".mjs", ".cjs", ".js", ".json"],
                 plugins: ["@babel/transform-runtime"],
                 presets: [
                     [
@@ -85,11 +75,10 @@ export default [
                 ],
                 sourceMaps: true,
             }),
-            typescript({ tsconfig: "tsconfig/build.json" }),
         ],
     },
     {
-        input: "src/index.ts",
+        input: "dist/index.mjs",
         output: {
             exports: "named",
             file: "dist/umd.js",
@@ -98,14 +87,10 @@ export default [
             sourcemap: true,
         },
         plugins: [
-            resolve(),
             terser(),
-            commonjs(),
-            json(),
             babel({
                 babelHelpers: "bundled",
                 babelrc: false,
-                extensions: [".ts", ".mjs", ".cjs", ".js", ".json"],
                 presets: [
                     [
                         "@babel/env",
@@ -118,7 +103,6 @@ export default [
                 ],
                 sourceMaps: true,
             }),
-            typescript({ tsconfig: "tsconfig/build.json" }),
         ],
     },
 ]

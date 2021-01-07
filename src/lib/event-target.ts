@@ -1,4 +1,4 @@
-import DOMException from "domexception"
+import { createInvalidStateError } from "./dom-exception"
 import { Event, getEventInternalData } from "./event"
 import { EventWrapper } from "./event-wrapper"
 import { Global } from "./global"
@@ -224,10 +224,7 @@ export class EventTarget<
             event0 instanceof Event ? event0 : EventWrapper.wrap(event0)
         const eventData = getEventInternalData(event)
         if (eventData.dispatchFlag) {
-            throw new DOMException(
-                "This event has been in dispatching.",
-                "InvalidStateError",
-            )
+            throw createInvalidStateError("This event has been in dispatching.")
         }
         assert(event.isTrusted === false, "'isTrusted' property must be false")
 

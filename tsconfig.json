@@ -6,7 +6,7 @@
     "noEmit": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "types": ["domexception", "mocha", "node"]
+    "types": ["mocha", "node"]
   },
   "include": ["scripts/**/*.ts", "src/**/*.ts", "test/**/*.ts"]
 }

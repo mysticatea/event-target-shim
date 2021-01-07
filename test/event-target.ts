@@ -1,6 +1,5 @@
 import { Spy, spy } from "@mysticatea/spy"
 import assert from "assert"
-import DOMException from "domexception"
 import { Event, EventTarget } from "../src/index"
 import { Global } from "../src/lib/global"
 import {
@@ -14,6 +13,7 @@ import { AbortSignalStub } from "./lib/abort-signal-stub"
 import { countEventListeners } from "./lib/count-event-listeners"
 import { setupErrorCheck } from "./lib/setup-error-check"
 
+const NativeDOMException: typeof DOMException = Global?.DOMException
 const NativeEventTarget: typeof Event = Global?.EventTarget
 const NativeEvent: typeof Event = Global?.Event
 const NativeKeyboardEvent: typeof KeyboardEvent = Global?.KeyboardEvent
@@ -804,7 +804,7 @@ describe("'EventTarget' class", () => {
             assertError(error)
         })
 
-        it("should throw a DOMException if the given event is being used", () => {
+        it("should throw a InvalidStateError if the given event is being used", () => {
             const event = new Event("foo")
             const f = spy(() => {
                 target.dispatchEvent(event)
@@ -813,13 +813,34 @@ describe("'EventTarget' class", () => {
             target.dispatchEvent(event)
 
             assert.strictEqual(f.calls.length, 1, "f should be called")
-            assert(f.calls[0].type === "throw", "f shold throw a value")
-            assert(
-                f.calls[0].throw instanceof DOMException,
-                "the thrown value should be a DOMException",
-            )
+            assert.strictEqual(f.calls[0].type, "throw" as const)
+            assert.strictEqual(f.calls[0].throw.name, "InvalidStateError")
+            assert.strictEqual(f.calls[0].throw.code, 11)
             assertError("This event has been in dispatching.")
         })
+
+        const withNativeDOME = NativeDOMException ? describe : xdescribe
+        withNativeDOME(
+            "if the native DOMException is present, the InvalidStateError",
+            () => {
+                it("should be a DOMException instance.", () => {
+                    const event = new Event("foo")
+                    const f = spy(() => {
+                        target.dispatchEvent(event)
+                    })
+                    target.addEventListener("foo", f, { once: true })
+                    target.dispatchEvent(event)
+
+                    assert.strictEqual(f.calls.length, 1, "f should be called")
+                    assert(f.calls[0].type === "throw", "f shold throw a value")
+                    assert(
+                        f.calls[0].throw instanceof NativeDOMException,
+                        "the thrown value should be a DOMException",
+                    )
+                    assertError("This event has been in dispatching.")
+                })
+            },
+        )
 
         it("should not call event listeners if given event was stopped", () => {
             const event = new Event("foo")
