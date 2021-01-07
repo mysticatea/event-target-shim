@@ -49,7 +49,7 @@ ac.abort(); // remove the listener.
 ```
 
 - For browsers, use a bundler such as [Webpack](https://webpack.js.org/) to bundle.
-  - If you want to support IE11, use `import {} from "event-target-shim/es5"` instead. It's a transpiled code by babel. It depends on `@baebl/runtime` package.
+  - If you want to support IE11, use `import {} from "event-target-shim/es5"` instead. It's a transpiled code by babel. It depends on `@baebl/runtime` (`^7.12.0`) package.
 - The `AbortController` class was added to the standard on 14 Jul 2017. If you want the shim of that, use [abort-controller](https://www.npmjs.com/package/abort-controller) package.
 
 ## 📚 API Reference
