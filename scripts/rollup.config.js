@@ -2,6 +2,24 @@ import babel from "@rollup/plugin-babel"
 import typescript from "@rollup/plugin-typescript"
 import { terser } from "rollup-plugin-terser"
 
+const babelBaseConfig = {
+    babelrc: false,
+    presets: [
+        [
+            "@babel/env",
+            {
+                modules: false,
+                targets: "IE 11",
+                useBuiltIns: false,
+            },
+        ],
+    ],
+}
+
+function sourcemapPathTransform(path) {
+    return path.startsWith("../") ? path.slice("../".length) : path
+}
+
 export default [
     {
         input: "src/index.ts",
@@ -9,6 +27,7 @@ export default [
             file: "dist/index.mjs",
             format: "es",
             sourcemap: true,
+            sourcemapPathTransform,
         },
         plugins: [typescript({ tsconfig: "tsconfig/build.json" })],
     },
@@ -19,6 +38,7 @@ export default [
             file: "dist/index.js",
             format: "cjs",
             sourcemap: true,
+            sourcemapPathTransform,
         },
         plugins: [typescript({ tsconfig: "tsconfig/build.json" })],
     },
@@ -28,24 +48,12 @@ export default [
         output: {
             file: "dist/es5.mjs",
             format: "es",
-            sourcemap: true,
         },
         plugins: [
             babel({
+                ...babelBaseConfig,
                 babelHelpers: "runtime",
-                babelrc: false,
                 plugins: [["@babel/transform-runtime", { useESModules: true }]],
-                presets: [
-                    [
-                        "@babel/env",
-                        {
-                            modules: false,
-                            targets: "IE 11",
-                            useBuiltIns: false,
-                        },
-                    ],
-                ],
-                sourceMaps: true,
             }),
         ],
     },
@@ -56,24 +64,12 @@ export default [
             exports: "named",
             file: "dist/es5.js",
             format: "cjs",
-            sourcemap: true,
         },
         plugins: [
             babel({
+                ...babelBaseConfig,
                 babelHelpers: "runtime",
-                babelrc: false,
                 plugins: ["@babel/transform-runtime"],
-                presets: [
-                    [
-                        "@babel/env",
-                        {
-                            modules: false,
-                            targets: "IE 11",
-                            useBuiltIns: false,
-                        },
-                    ],
-                ],
-                sourceMaps: true,
             }),
         ],
     },
@@ -84,24 +80,12 @@ export default [
             file: "dist/umd.js",
             format: "umd",
             name: "EventTargetShim",
-            sourcemap: true,
         },
         plugins: [
             terser(),
             babel({
+                ...babelBaseConfig,
                 babelHelpers: "bundled",
-                babelrc: false,
-                presets: [
-                    [
-                        "@babel/env",
-                        {
-                            modules: false,
-                            targets: "IE 11",
-                            useBuiltIns: false,
-                        },
-                    ],
-                ],
-                sourceMaps: true,
             }),
         ],
     },
