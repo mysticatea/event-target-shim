@@ -225,7 +225,7 @@ export class EventTarget<
         }
 
         const event = e instanceof Event ? e : EventWrapper.wrap(e)
-        const eventData = getEventInternalData(event)
+        const eventData = getEventInternalData(event, "event")
         if (eventData.dispatchFlag) {
             throw createInvalidStateError("This event has been in dispatching.")
         }
@@ -404,13 +404,15 @@ const internalDataMap = new WeakMap<any, EventTargetInternalData>()
 /**
  * Get private data.
  * @param target The event target object to get private data.
+ * @param name The variable name to report.
  * @returns The private data of the event.
  */
-function $(target: any): EventTargetInternalData {
+function $(target: any, name = "this"): EventTargetInternalData {
     const retv = internalDataMap.get(target)
     assertType(
         retv != null,
-        "'this' is expected an EventTarget object, but got %o",
+        "'%s' must be an object that EventTarget constructor created, but got another one: %o",
+        name,
         target,
     )
     return retv

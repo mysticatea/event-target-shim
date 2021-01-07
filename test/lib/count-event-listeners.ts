@@ -12,7 +12,7 @@ export function countEventListeners(
     target: EventTarget<any, any>,
     type?: string,
 ): number {
-    const listenerMap = getEventTargetInternalData(target)
+    const listenerMap = getEventTargetInternalData(target, "target")
     const keys = type ? [type] : Object.keys(listenerMap)
     return keys.reduce(
         (count, key) => count + (listenerMap[key]?.listeners.length ?? 0),

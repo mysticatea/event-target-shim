@@ -52,8 +52,12 @@ export class Event<TEventType extends string = string> {
      * @see https://dom.spec.whatwg.org/#dom-event-event
      */
     constructor(type: TEventType, eventInitDict?: Event.EventInit) {
-        const opts = eventInitDict ?? {}
+        Object.defineProperty(this, "isTrusted", {
+            value: false,
+            enumerable: true,
+        })
 
+        const opts = eventInitDict ?? {}
         internalDataMap.set(this, {
             type: String(type),
             bubbles: Boolean(opts.bubbles),
@@ -67,11 +71,6 @@ export class Event<TEventType extends string = string> {
             inPassiveListenerFlag: false,
             dispatchFlag: false,
             timeStamp: Date.now(),
-        })
-
-        Object.defineProperty(this, "isTrusted", {
-            value: false,
-            enumerable: true,
         })
     }
 
@@ -385,13 +384,15 @@ const internalDataMap = new WeakMap<any, EventInternalData>()
 /**
  * Get private data.
  * @param event The event object to get private data.
+ * @param name The variable name to report.
  * @returns The private data of the event.
  */
-function $(event: unknown): EventInternalData {
+function $(event: unknown, name = "this"): EventInternalData {
     const retv = internalDataMap.get(event)
     assertType(
         retv != null,
-        "'this' is expected an Event object, but got %o",
+        "'%s' must be an object that Event constructor created, but got another one: %o",
+        name,
         event,
     )
     return retv

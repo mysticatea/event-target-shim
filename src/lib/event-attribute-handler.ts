@@ -16,7 +16,8 @@ export function getEventAttributeValue<
     target: TEventTarget,
     type: string,
 ): EventTarget.CallbackFunction<TEventTarget, TEvent> | null {
-    return getEventTargetInternalData(target)[type]?.attrCallback ?? null
+    const listMap = getEventTargetInternalData(target, "target")
+    return listMap[type]?.attrCallback ?? null
 }
 
 /**
@@ -62,7 +63,7 @@ function upsertEventAttributeListener<
     callback: EventTarget.CallbackFunction<TEventTarget, any>,
 ): void {
     const list = ensureListenerList(
-        getEventTargetInternalData(target),
+        getEventTargetInternalData(target, "target"),
         String(type),
     )
     list.attrCallback = callback
@@ -89,7 +90,8 @@ function removeEventAttributeListener(
     target: EventTarget<any, any>,
     type: string,
 ): void {
-    const list = getEventTargetInternalData(target)[String(type)]
+    const listMap = getEventTargetInternalData(target, "target")
+    const list = listMap[String(type)]
     if (list && list.attrListener) {
         removeListener(list, list.attrListener.callback, false)
         list.attrCallback = list.attrListener = undefined
