@@ -138,7 +138,7 @@ interface MyEventTarget
 // ✅ After
 import { EventTarget } from "event-target-shim";
 interface MyEventTarget extends EventTarget<{ myevent: Event }> {
-  onmyevent: EventTarget.FunctionEventListener<Event> | null;
+  onmyevent: EventTarget.CallbackFunction<Event> | null;
 }
 ```
 

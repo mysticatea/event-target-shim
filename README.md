@@ -13,6 +13,18 @@ This implementation is designed ...
 - Working fine on both browsers and Node.js.
 - TypeScript friendly.
 
+**Native Support Information:**
+
+| Feature                   | IE  | Edge | Firefox | Chrome | Safari | Node.js |
+| :------------------------ | :-- | :--- | :------ | :----- | :----- | :------ |
+| `Event` constructor       | ❌  | 12   | 11      | 15     | 6      | 15.4.0  |
+| `EventTarget` constructor | ❌  | 87   | 84      | 87     | 14     | 15.4.0  |
+| `passive` option          | ❌  | 16   | 49      | 51     | 10     | 15.4.0  |
+| `once` option             | ❌  | 16   | 50      | 55     | 10     | 15.4.0  |
+| `signal` option           | ❌  | ❌   | ❌      | ❌     | ❌     | ❌      |
+
+---
+
 ## 💿 Installation
 
 Use [npm](https://www.npmjs.com/) or a compatible tool.
@@ -48,9 +60,15 @@ myNode.addEventListener("hello", listener, { signal: ac.signal });
 ac.abort(); // remove the listener.
 ```
 
-- For browsers, use a bundler such as [Webpack](https://webpack.js.org/) to bundle.
-  - If you want to support IE11, use `import {} from "event-target-shim/es5"` instead. It's a transpiled code by babel. It depends on `@baebl/runtime` (`^7.12.0`) package.
+- For browsers, there are two ways:
+  - use a bundler such as [Webpack](https://webpack.js.org/) to bundle. If you want to support IE11, use `import {} from "event-target-shim/es5"` instead. It's a transpiled code by babel. It depends on `@baebl/runtime` (`^7.12.0`) package.
+  - use CDN such as `unpkg.com`. For example, `<script src="https://unpkg.com/event-target-shim@6.0.2"></script>` will define `EventTargetShim` global variable.
 - The `AbortController` class was added to the standard on 14 Jul 2017. If you want the shim of that, use [abort-controller](https://www.npmjs.com/package/abort-controller) package.
+
+### Runnable Examples
+
+- [Basic Example](https://jsbin.com/dapuwomamo/1/edit?html,console)
+- [Basic Example (IE11)](https://jsbin.com/xigeyetipe/1/edit?html,console)
 
 ## 📚 API Reference
 
