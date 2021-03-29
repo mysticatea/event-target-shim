@@ -21,7 +21,7 @@ This implementation is designed ...
 | `EventTarget` constructor | ❌  | 87   | 84      | 87     | 14     | 15.4.0  |
 | `passive` option          | ❌  | 16   | 49      | 51     | 10     | 15.4.0  |
 | `once` option             | ❌  | 16   | 50      | 55     | 10     | 15.4.0  |
-| `signal` option           | ❌  | ❌   | ❌      | ❌     | ❌     | ❌      |
+| `signal` option           | ❌  | 88   | 86      | 88     | ❌     | ❌      |
 
 ---
 
