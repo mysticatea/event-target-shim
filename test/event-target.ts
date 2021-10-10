@@ -179,7 +179,7 @@ describe("'EventTarget' class", () => {
 
         it("should not add the same listener twice even if signal flag is different.", () => {
             const f = () => {}
-            target.addEventListener("foo", f, { signal: null })
+            target.addEventListener("foo", f, {})
             target.addEventListener("foo", f, { signal: new AbortSignalStub() })
 
             assert.strictEqual(countEventListeners(target), 1)
@@ -192,7 +192,6 @@ describe("'EventTarget' class", () => {
             target.addEventListener("foo", f, {
                 passive: true,
                 once: true,
-                signal: null,
             })
             target.addEventListener("foo", f, {
                 passive: false,
