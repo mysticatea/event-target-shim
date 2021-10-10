@@ -324,7 +324,7 @@ export namespace EventTarget {
     export interface AddOptions extends Options {
         passive?: boolean
         once?: boolean
-        signal?: AbortSignal | null | undefined
+        signal?: AbortSignal
     }
 
     /**
