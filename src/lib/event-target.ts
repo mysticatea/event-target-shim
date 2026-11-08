@@ -249,10 +249,18 @@ export class EventTarget<
                 }
 
                 // Remove this listener if has the `once` flag.
-                if (isOnce(listener) && removeListenerAt(list, i, !cow)) {
-                    // Because this listener was removed, the next index is the
-                    // same as the current value.
-                    i -= 1
+                if (isOnce(listener)) {
+                    const index =
+                        list.listeners === listeners
+                            ? i
+                            : list.listeners.indexOf(listener)
+                    if (
+                        removeListenerAt(list, index, !cow) &&
+                        list.listeners === listeners
+                    ) {
+                        // Adjust the index only if the iterated array changed.
+                        i -= 1
+                    }
                 }
 
                 // Call this listener with the `passive` flag.

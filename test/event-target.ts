@@ -676,6 +676,151 @@ describe("'EventTarget' class", () => {
             assert.strictEqual(f4.calls.length, 2, "f4 should be called twice")
         })
 
+        describe("listener mutations before once listeners (#61)", () => {
+            it("should remove the once listener after an earlier listener removes itself.", () => {
+                const first = spy(() => {
+                    target.removeEventListener("foo", first)
+                })
+                const once = spy()
+                target.addEventListener("foo", first)
+                target.addEventListener("foo", once, { once: true })
+                const event = new Event("foo")
+
+                assert.strictEqual(target.dispatchEvent(event), true)
+                assert.strictEqual(target.dispatchEvent(event), true)
+
+                assert.strictEqual(first.calls.length, 1)
+                assert.strictEqual(once.calls.length, 1)
+                assert.strictEqual(countEventListeners(target), 0)
+                assert.strictEqual(event.currentTarget, null)
+            })
+
+            it("should preserve following listeners after removing an earlier listener.", () => {
+                const first = spy()
+                const second = spy(() => {
+                    target.removeEventListener("foo", first)
+                })
+                const once = spy()
+                const last = spy()
+                target.addEventListener("foo", first)
+                target.addEventListener("foo", second)
+                target.addEventListener("foo", once, { once: true })
+                target.addEventListener("foo", last)
+
+                target.dispatchEvent(new Event("foo"))
+                target.dispatchEvent(new Event("foo"))
+
+                assert.strictEqual(first.calls.length, 1)
+                assert.strictEqual(second.calls.length, 2)
+                assert.strictEqual(once.calls.length, 1)
+                assert.strictEqual(last.calls.length, 2)
+                assert.strictEqual(countEventListeners(target), 2)
+            })
+
+            it("should defer a removed and re-added once listener until the next dispatch.", () => {
+                const first = spy(() => {
+                    target.removeEventListener("foo", first)
+                    target.removeEventListener("foo", replaced)
+                    target.addEventListener("foo", replaced, { once: true })
+                })
+                const replaced = spy()
+                const once = spy()
+                target.addEventListener("foo", first)
+                target.addEventListener("foo", replaced, { once: true })
+                target.addEventListener("foo", once, { once: true })
+
+                target.dispatchEvent(new Event("foo"))
+                assert.strictEqual(replaced.calls.length, 0)
+                assert.strictEqual(once.calls.length, 1)
+                assert.strictEqual(countEventListeners(target), 1)
+
+                target.dispatchEvent(new Event("foo"))
+                assert.strictEqual(replaced.calls.length, 1)
+                assert.strictEqual(once.calls.length, 1)
+                assert.strictEqual(countEventListeners(target), 0)
+            })
+
+            it("should allow a once listener to re-add itself for the next dispatch.", () => {
+                const first = spy(() => {
+                    target.removeEventListener("foo", first)
+                })
+                let calls = 0
+                const once = () => {
+                    calls += 1
+                    if (calls === 1) {
+                        target.addEventListener("foo", once, { once: true })
+                    }
+                }
+                target.addEventListener("foo", first)
+                target.addEventListener("foo", once, { once: true })
+
+                target.dispatchEvent(new Event("foo"))
+                assert.strictEqual(calls, 1)
+                assert.strictEqual(countEventListeners(target), 1)
+                target.dispatchEvent(new Event("foo"))
+                target.dispatchEvent(new Event("foo"))
+                assert.strictEqual(calls, 2)
+                assert.strictEqual(countEventListeners(target), 0)
+            })
+
+            it("should invoke once listeners only once across nested dispatches after removal.", () => {
+                const calls: string[] = []
+                const first = () => {
+                    calls.push("first")
+                    target.removeEventListener("foo", first)
+                    target.dispatchEvent(new Event("foo"))
+                }
+                target.addEventListener("foo", first)
+                target.addEventListener("foo", () => calls.push("once"), {
+                    once: true,
+                })
+                target.addEventListener("foo", () => calls.push("last"))
+
+                target.dispatchEvent(new Event("foo"))
+                assert.deepStrictEqual(calls, ["first", "once", "last", "last"])
+                assert.strictEqual(countEventListeners(target), 1)
+            })
+
+            it("should detach the correct abort handlers after a signal removes an earlier listener.", () => {
+                const firstSignal = new AbortSignalStub()
+                const onceSignal = new AbortSignalStub()
+                const first = spy(() => firstSignal.abort())
+                const once = spy()
+                target.addEventListener("foo", first, { signal: firstSignal })
+                target.addEventListener("foo", once, {
+                    once: true,
+                    signal: onceSignal,
+                })
+
+                target.dispatchEvent(new Event("foo"))
+                target.dispatchEvent(new Event("foo"))
+                assert.strictEqual(first.calls.length, 1)
+                assert.strictEqual(once.calls.length, 1)
+                assert.strictEqual(countEventListeners(firstSignal), 0)
+                assert.strictEqual(countEventListeners(onceSignal), 0)
+                assert.strictEqual(countEventListeners(target), 0)
+            })
+
+            it("should retain unreached once listeners when immediate propagation stops.", () => {
+                const first = (event: Event) => {
+                    target.removeEventListener("foo", first)
+                    event.stopImmediatePropagation()
+                }
+                const once = spy()
+                target.addEventListener("foo", first)
+                target.addEventListener("foo", once, { once: true })
+                const event = new Event("foo")
+
+                target.dispatchEvent(event)
+                assert.strictEqual(once.calls.length, 0)
+                assert.strictEqual(countEventListeners(target), 1)
+                target.dispatchEvent(event)
+                target.dispatchEvent(event)
+                assert.strictEqual(once.calls.length, 1)
+                assert.strictEqual(countEventListeners(target), 0)
+            })
+        })
+
         it("should handle removing once and remove", () => {
             const f1 = spy(() => {
                 target.removeEventListener("foo", f1)
